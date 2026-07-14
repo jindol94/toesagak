@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1B1F27">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>회사에서 살아남기 — 오늘도 퇴사각 재는 중</title>
+<style>
+  :root {
+    --bg: #F2F4F6; --card: #FFFFFF; --text: #191F28; --sub: #6B7684; --line: #E5E8EB;
+    --blue: #3182F6; --red: #F04452; --orange: #FF8A00; --green: #12B76A;
+    --red-bg: #FEECEE; --blue-bg: #EAF2FE; --shadow: 0 1px 4px rgba(0,0,0,.05);
+    --inp-bg: #FAFBFC; --nav-bg: rgba(255,255,255,.94);
+  }
+  html.dark {
+    --bg: #131519; --card: #1E222A; --text: #F2F4F6; --sub: #9AA3AF; --line: #2E3440;
+    --red-bg: #3A2226; --blue-bg: #1E2C44; --shadow: 0 1px 4px rgba(0,0,0,.3);
+    --inp-bg: #171A20; --nav-bg: rgba(19,21,25,.94);
+  }
+  @media (prefers-color-scheme: dark) {
+    html:not(.light) {
+      --bg: #131519; --card: #1E222A; --text: #F2F4F6; --sub: #9AA3AF; --line: #2E3440;
+      --red-bg: #3A2226; --blue-bg: #1E2C44; --shadow: 0 1px 4px rgba(0,0,0,.3);
+      --inp-bg: #171A20; --nav-bg: rgba(19,21,25,.94);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 16px; }
+  body {
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    display: flex; justify-content: center; min-height: 100vh;
+  }
+  #app { width: 100%; max-width: 440px; padding: 20px 16px 96px; }
+
+  /* ── 공통 컴포넌트 ── */
+  .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; }
+  .page-head { padding: 8px 4px 16px; }
+  .page-head p { color: var(--sub); font-size: .875rem; margin-top: 2px; }
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+  label { display: block; font-size: .8rem; color: var(--sub); margin: 12px 0 6px; font-weight: 600; }
+  label:first-of-type { margin-top: 0; }
+  .inp {
+    width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    font-size: 1.05rem; font-weight: 700; font-family: inherit; color: var(--text);
+    outline: none; background: var(--inp-bg); text-align: right; transition: border-color .15s;
+  }
+  .inp:focus { border-color: var(--blue); background: var(--card); }
+  input[type="date"].inp, input[type="time"].inp { text-align: left; font-weight: 600; }
+  .unit-wrap { position: relative; }
+  .unit-wrap .inp { padding-right: 52px; }
+  .unit-wrap .unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: .9rem; font-weight: 600; pointer-events: none; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    width: 100%; border: none; border-radius: 14px; padding: 15px; font-size: 1.05rem;
+    font-weight: 800; font-family: inherit; cursor: pointer; margin-top: 16px; transition: transform .08s, opacity .15s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--sub); font-weight: 600; padding: 10px; margin-top: 6px; font-size: .9rem; }
+
+  .result-row { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--bg); font-size: .92rem; }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .k { color: var(--sub); }
+  .result-row .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .result-row.total { border-top: 2px solid var(--text); margin-top: 4px; padding-top: 12px; }
+  .result-row.total .k { color: var(--text); font-weight: 800; }
+  .result-row.total .v { font-size: 1.15rem; font-weight: 800; color: var(--blue); }
+  .bignum { font-size: 2rem; font-weight: 900; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+  .hint { font-size: .78rem; color: var(--sub); margin-top: 10px; line-height: 1.55; }
+
+  /* ── 탭바 ── */
+  nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 440px; background: var(--nav-bg); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line); display: flex; z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1; background: none; border: none; padding: 16px 0 18px; cursor: pointer;
+    font-family: inherit; color: #ADB5BD; font-size: .9rem; font-weight: 700;
+  }
+  nav button.on { color: var(--text); }
+  nav button.on::after { content: ""; display: block; width: 18px; height: 3px; border-radius: 3px; background: var(--text); margin: 4px auto 0; }
+  .tab { display: none; }
+  .tab.on { display: block; animation: fadein .18s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  /* ── 홈(퇴사각) ── */
+  .hero { background: linear-gradient(135deg, #1B1F27 0%, #2A3040 100%); color: #fff; border-radius: 24px; padding: 26px 22px; margin-bottom: 12px; }
+  .hero .cap { font-size: .85rem; color: #9CA6B5; font-weight: 600; }
+  .hero .money { font-size: 2.3rem; font-weight: 900; letter-spacing: -1.5px; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .hero .sub { font-size: .82rem; color: #8B95A5; }
+  .gauge { background: rgba(255,255,255,.12); border-radius: 99px; height: 12px; margin: 18px 0 8px; overflow: hidden; }
+  .gauge .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #F04452, #FF8A00); width: 0%; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .gauge-label { display: flex; justify-content: space-between; font-size: .75rem; color: #8B95A5; }
+  .verdict { margin-top: 16px; background: rgba(255,255,255,.08); border-radius: 14px; padding: 14px; font-size: .92rem; line-height: 1.6; }
+  .verdict b { color: #FFB199; }
+  .chip { display: inline-block; background: var(--red-bg); color: var(--red); font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; margin-bottom: 8px; }
+  .chip.blue { background: var(--blue-bg); color: var(--blue); }
+  details.profile summary { cursor: pointer; font-weight: 700; font-size: 1rem; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details.profile summary::after { content: "▾"; color: var(--sub); transition: transform .2s; }
+  details.profile[open] summary::after { transform: rotate(180deg); }
+
+  /* ── 계산기 세그먼트 ── */
+  .seg { display: flex; gap: 6px; overflow-x: auto; padding: 2px; margin-bottom: 14px; scrollbar-width: none; }
+  .seg::-webkit-scrollbar { display: none; }
+  .seg button {
+    flex-shrink: 0; border: none; background: var(--card); color: var(--sub); font-family: inherit;
+    font-size: .85rem; font-weight: 700; padding: 9px 15px; border-radius: 99px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .seg button.on { background: var(--text); color: var(--card); }
+  .calc-panel { display: none; }
+  .calc-panel.on { display: block; }
+
+  /* ── 월루 ── */
+  .live-money { font-size: 2.4rem; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .equiv { font-size: .88rem; color: var(--sub); margin-top: 4px; min-height: 1.4em; }
+  .roulette-result { font-size: 1.9rem; font-weight: 900; text-align: center; padding: 18px 0 6px; min-height: 2.6em; letter-spacing: -1px; }
+  .quote { font-size: 1.02rem; font-weight: 700; line-height: 1.65; text-align: center; padding: 10px 4px; min-height: 3.2em; word-break: keep-all; }
+  .quote-src { text-align: center; color: var(--sub); font-size: .78rem; }
+
+  /* ── 정보 ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .info-cell { background: var(--card); border-radius: 16px; padding: 16px 14px; box-shadow: var(--shadow); }
+  .info-cell .t { font-size: .72rem; color: var(--sub); font-weight: 700; }
+  .info-cell .n { font-size: 1.15rem; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .law { border-left: 3px solid var(--blue); padding: 2px 0 2px 12px; margin-bottom: 14px; }
+  .law:last-child { margin-bottom: 0; }
+  .law .lt { font-weight: 800; font-size: .92rem; }
+  .law .lb { font-size: .84rem; color: var(--sub); margin-top: 2px; line-height: 1.55; }
+  .dday { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--bg); }
+  .dday:last-child { border-bottom: none; }
+  .dday .dl { font-weight: 700; font-size: .92rem; }
+  .dday .dv { font-weight: 900; color: var(--blue); font-size: 1.05rem; }
+
+  /* ── 로그인 ── */
+  #login { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  #login.off { display: none; }
+  .login-box { width: 100%; max-width: 360px; }
+  .login-box h1 { font-size: 2rem; text-align: center; }
+  .login-box .tag { text-align: center; color: var(--sub); font-size: .9rem; margin: 4px 0 28px; }
+  .user-btn {
+    width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px;
+    padding: 15px 18px; font-family: inherit; font-size: 1rem; font-weight: 700; color: var(--text);
+    cursor: pointer; margin-bottom: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center;
+  }
+  .user-btn:active { transform: scale(.98); }
+  .user-btn .pin-mark { color: var(--sub); font-size: .78rem; font-weight: 600; }
+  .login-sec { background: var(--card); border-radius: 16px; padding: 18px; margin-top: 14px; box-shadow: var(--shadow); }
+
+  /* ── 사표 모달 ── */
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
+  #modal.on { display: flex; }
+  .sheet { background: var(--card); width: 100%; max-width: 440px; border-radius: 24px 24px 0 0; padding: 26px 22px calc(24px + env(safe-area-inset-bottom)); animation: up .25s cubic-bezier(.2,.8,.2,1); max-height: 88vh; overflow-y: auto; }
+  @keyframes up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet h2 { font-size: 1.3rem; font-weight: 900; letter-spacing: -0.5px; }
+  .strike { text-decoration: line-through; color: #ADB5BD; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══════════ 탭 1: 퇴사각 ═══════════ -->
+  <section id="tab-home" class="tab on">
+    <div class="page-head">
+      <h1>회사에서 살아남기</h1>
+      <p>오늘도 퇴사각 재는 중</p>
+    </div>
+
+    <div class="hero">
+      <div class="cap">지금 사표 내면 손에 쥐는 돈</div>
+      <div class="money" id="h-total">— 원</div>
+      <div class="sub" id="h-breakdown">프로필을 입력하면 계산해드려요</div>
+      <div class="sub" id="h-live" style="margin-top:6px; color:#7DD3A0; font-weight:700"></div>
+      <div class="gauge"><div class="fill" id="h-gauge"></div></div>
+      <div class="gauge-label"><span>생존 가능</span><span id="h-months">0개월</span></div>
+      <div class="verdict" id="h-verdict">아래에 연봉과 입사일을 넣어보세요. 냉정하게 계산해드립니다.</div>
+    </div>
+
+    <div class="card" id="leave-banner" style="display:none; border-left:4px solid var(--orange)">
+      <div style="font-weight:800; font-size:.95rem">연차 소멸 주의보</div>
+      <p class="hint" id="leave-banner-text" style="margin-top:4px"></p>
+    </div>
+
+    <div class="card">
+      <details class="profile" id="profile-box" open>
+        <summary>내 정보</summary>
+        <div style="margin-top:6px">
+          <label>연봉 (세전)</label>
+          <div class="unit-wrap"><input class="inp" id="p-salary" inputmode="numeric" placeholder="4,000"><span class="unit">만원</span></div>
+          <div class="row2">
+            <div><label>입사일</label><input type="date" class="inp" id="p-join"></div>
+            <div><label>월급날</label><div class="unit-wrap"><input class="inp" id="p-payday" inputmode="numeric" value="25"><span class="unit">일</span></div></div>
+          </div>
+          <div class="row2">
+            <div><label>월 생활비</label><div class="unit-wrap"><input class="inp" id="p-expense" inputmode="numeric" placeholder="200"><span class="unit">만원</span></div></div>
+            <div><label>남은 연차</label><div class="unit-wrap"><input class="inp" id="p-leave" inputmode="numeric" placeholder="5"><span class="unit">일</span></div></div>
+          </div>
+          <div class="row2">
+            <div><label>출근 시간</label><input type="time" class="inp" id="p-start" value="09:00"></div>
+            <div><label>퇴근 시간</label><input type="time" class="inp" id="p-end" value="18:00"></div>
+          </div>
+          <div class="row2">
+            <div><label>점심 시작</label><input type="time" class="inp" id="p-lunch" value="12:00"></div>
+            <div><label>점심 길이</label><div class="unit-wrap"><input class="inp" id="p-lunchmin" inputmode="numeric" value="60"><span class="unit">분</span></div></div>
+          </div>
+          <label>출생연도 (실업급여 계산용 — 50세 이상은 지급일수가 늘어요)</label>
+          <div class="unit-wrap"><input class="inp no-format" id="p-birth" inputmode="numeric" maxlength="4" placeholder="1993"><span class="unit">년</span></div>
+          <button class="btn btn-blue" id="p-save">저장하고 퇴사각 재기</button>
+          <div class="row2" style="margin-top:6px">
+            <button class="btn btn-ghost" id="btn-logout" style="margin-top:0">로그아웃</button>
+            <button class="btn btn-ghost" id="btn-delacct" style="margin-top:0; color:var(--red)">계정 삭제</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card" id="graph-card" style="display:none">
+      <div class="section-title" style="margin-bottom:2px">존버 그래프</div>
+      <p class="hint" style="margin:0 0 10px" id="graph-sub"></p>
+      <div style="position:relative">
+        <svg id="graph-svg" viewBox="0 0 340 150" style="width:100%; display:block"></svg>
+        <div id="graph-tip" style="position:absolute; display:none; background:var(--text); color:var(--card); font-size:.72rem; font-weight:700; padding:4px 8px; border-radius:8px; pointer-events:none; white-space:nowrap; z-index:5"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-red" id="btn-quit" style="margin-top:4px">사표 던져보기 (시뮬레이션)</button>
+    <p class="hint" style="text-align:center">실제 사표는 던져지지 않습니다. 아직은요.</p>
+  </section>
+
+  <!-- ═══════════ 탭 2: 계산기 ═══════════ -->
+  <section id="tab-calc" class="tab">
+    <div class="page-head">
+      <h1>계산기</h1>
+      <p id="calc-sub">최신 요율 기준</p>
+    </div>
+
+    <div class="seg" id="calc-seg">
+      <button data-c="net" class="on">실수령액</button>
+      <button data-c="sev">퇴직금</button>
+      <button data-c="lea">연차</button>
+      <button data-c="ue">실업급여</button>
+      <button data-c="ot">야근수당</button>
+      <button data-c="move">이직 손익</button>
+      <button data-c="chk">명세서 검증</button>
+    </div>
+
+    <!-- 실수령액 -->
+    <div class="calc-panel on" id="c-net">
+      <div class="card">
+        <label>연봉 (세전)</label>
+        <div class="unit-wrap"><input class="inp" id="n-salary" inputmode="numeric" placeholder="4,000"><span class="unit">만원</span></div>
+        <div class="row2">
+          <div><label>월 비과세액 (식대 등)</label><div class="unit-wrap"><input class="inp" id="n-taxfree" inputmode="numeric" value="20"><span class="unit">만원</span></div></div>
+          <div><label>부양가족 (본인 포함)</label><div class="unit-wrap"><input class="inp" id="n-dep" inputmode="numeric" value="1"><span class="unit">명</span></div></div>
+        </div>
+        <label>8~20세 자녀</label>
+        <div class="unit-wrap"><input class="inp" id="n-child" inputmode="numeric" value="0"><span class="unit">명</span></div>
+        <button class="btn btn-blue" id="n-go">계산하기</button>
+      </div>
+      <div class="card" id="n-result" style="display:none"></div>
+    </div>
+
+    <!-- 퇴직금 -->
+    <div class="calc-panel" id="c-sev">
+      <div class="card">
+        <label>퇴직급여 유형</label>
+        <div class="row2">
+          <button class="btn btn-blue" id="s-type-db" style="margin-top:0; padding:11px; font-size:.9rem">DB형 (퇴직금)</button>
+          <button class="btn" id="s-type-dc" style="margin-top:0; padding:11px; font-size:.9rem; background:var(--bg); color:var(--sub)">DC형 (연금)</button>
+        </div>
+        <div class="row2">
+          <div><label>입사일</label><input type="date" class="inp" id="s-start"></div>
+          <div><label>퇴사(예정)일</label><input type="date" class="inp" id="s-end"></div>
+        </div>
+        <label>최근 3개월 급여 총액 (세전)</label>
+        <div class="unit-wrap"><input class="inp" id="s-pay3" inputmode="numeric" placeholder="1,000"><span class="unit">만원</span></div>
+        <div class="row2">
+          <div><label>연간 상여금</label><div class="unit-wrap"><input class="inp" id="s-bonus" inputmode="numeric" value="0"><span class="unit">만원</span></div></div>
+          <div><label>연차수당 (연간)</label><div class="unit-wrap"><input class="inp" id="s-lp" inputmode="numeric" value="0"><span class="unit">만원</span></div></div>
+        </div>
+        <button class="btn btn-blue" id="s-go">계산하기</button>
+      </div>
+      <div class="card" id="s-result" style="display:none"></div>
+    </div>
+
+    <!-- 연차 -->
+    <div class="calc-panel" id="c-lea">
+      <div class="card">
+        <label>입사일</label>
+        <input type="date" class="inp" id="l-join">
+        <label>산정 기준 (회사 규정 확인)</label>
+        <div class="row2">
+          <button class="btn btn-blue" id="l-mode-join" style="margin-top:0; padding:11px; font-size:.9rem">입사일 기준</button>
+          <button class="btn" id="l-mode-fiscal" style="margin-top:0; padding:11px; font-size:.9rem; background:var(--bg); color:var(--sub)">회계연도 기준</button>
+        </div>
+        <button class="btn btn-blue" id="l-go">계산하기</button>
+      </div>
+      <div class="card" id="l-result" style="display:none"></div>
+    </div>
+
+    <!-- 실업급여 -->
+    <div class="calc-panel" id="c-ue">
+      <div class="card">
+        <div class="row2">
+          <div><label>만 나이</label><div class="unit-wrap"><input class="inp" id="u-age" inputmode="numeric" placeholder="33"><span class="unit">세</span></div></div>
+          <div><label>고용보험 가입기간</label><div class="unit-wrap"><input class="inp" id="u-months" inputmode="numeric" placeholder="36"><span class="unit">개월</span></div></div>
+        </div>
+        <label>퇴직 전 3개월 평균 월급 (세전)</label>
+        <div class="unit-wrap"><input class="inp" id="u-wage" inputmode="numeric" placeholder="330"><span class="unit">만원</span></div>
+        <button class="btn btn-blue" id="u-go">계산하기</button>
+      </div>
+      <div class="card" id="u-result" style="display:none"></div>
+    </div>
+
+    <!-- 야근수당 -->
+    <div class="calc-panel" id="c-ot">
+      <div class="card">
+        <label>월급 (세전, 통상임금 기준)</label>
+        <div class="unit-wrap"><input class="inp" id="o-salary" inputmode="numeric" placeholder="330"><span class="unit">만원</span></div>
+        <label>이번 달 야근 시간</label>
+        <div class="unit-wrap"><input class="inp" id="o-hours" inputmode="numeric" placeholder="10"><span class="unit">시간</span></div>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:14px">
+          <input type="checkbox" id="o-inclusive" style="width:18px; height:18px; accent-color:var(--blue)">
+          <span style="font-size:.9rem; color:var(--text); font-weight:600">우리 회사는 포괄임금제</span>
+        </label>
+        <button class="btn btn-blue" id="o-go">계산하기</button>
+      </div>
+      <div class="card" id="o-result" style="display:none"></div>
+    </div>
+
+    <!-- 이직 손익 -->
+    <div class="calc-panel" id="c-move">
+      <div class="card">
+        <div class="row2">
+          <div><label>현재 연봉</label><div class="unit-wrap"><input class="inp" id="v-cur" inputmode="numeric" placeholder="4,200"><span class="unit">만원</span></div></div>
+          <div><label>오퍼 연봉</label><div class="unit-wrap"><input class="inp" id="v-offer" inputmode="numeric" placeholder="4,800"><span class="unit">만원</span></div></div>
+        </div>
+        <button class="btn btn-blue" id="v-go">손익 따져보기</button>
+      </div>
+      <div class="card" id="v-result" style="display:none"></div>
+    </div>
+
+    <!-- 명세서 검증 -->
+    <div class="calc-panel" id="c-chk">
+      <div class="card">
+        <div class="section-title">급여명세서 공제액이 맞는지 확인해드려요</div>
+        <div class="row2">
+          <div><label>월급 (세전)</label><div class="unit-wrap"><input class="inp" id="k-salary" inputmode="numeric" placeholder="350"><span class="unit">만원</span></div></div>
+          <div><label>월 비과세액</label><div class="unit-wrap"><input class="inp" id="k-taxfree" inputmode="numeric" value="20"><span class="unit">만원</span></div></div>
+        </div>
+        <label>명세서상 국민연금</label>
+        <div class="unit-wrap"><input class="inp" id="k-pension" inputmode="numeric" placeholder="156,750"><span class="unit">원</span></div>
+        <label>명세서상 건강보험 (장기요양 제외)</label>
+        <div class="unit-wrap"><input class="inp" id="k-health" inputmode="numeric" placeholder="118,630"><span class="unit">원</span></div>
+        <label>명세서상 고용보험</label>
+        <div class="unit-wrap"><input class="inp" id="k-emp" inputmode="numeric" placeholder="29,700"><span class="unit">원</span></div>
+        <button class="btn btn-blue" id="k-go">검증하기</button>
+      </div>
+      <div class="card" id="k-result" style="display:none"></div>
+    </div>
+
+    <p class="hint">※ 간이 계산 결과로 실제 지급액과 다를 수 있어요. 소득세는 간이세액 방식의 근사치이며, 정확한 금액은 급여명세서·고용센터·회사 규정을 확인하세요.</p>
+  </section>
+
+  <!-- ═══════════ 탭 3: 월루 ═══════════ -->
+  <section id="tab-fun" class="tab">
+    <div class="page-head">
+      <h1>월급루팡</h1>
+      <p>합법적으로 회사에서 버는 중</p>
+    </div>
+
+    <div class="card">
+      <span class="chip blue">LIVE</span>
+      <div class="section-title" style="margin-bottom:4px">오늘 출근해서 지금까지 번 돈</div>
+      <div class="live-money" id="f-earned">0원</div>
+      <div class="equiv" id="f-equiv"></div>
+      <p class="hint" id="f-note">퇴사각 탭에서 연봉·출퇴근·점심 시간을 저장하면 실시간으로 굴러갑니다.</p>
+      <button class="btn" id="f-share" style="background:var(--bg); color:var(--text)">오늘 수입 카드 저장</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">이 회의, 얼마짜리?</div>
+      <div class="row2">
+        <div><label>참석 인원</label><div class="unit-wrap"><input class="inp" id="m-people" inputmode="numeric" value="6"><span class="unit">명</span></div></div>
+        <div><label>평균 연봉 (추정)</label><div class="unit-wrap"><input class="inp" id="m-salary" inputmode="numeric" value="5,000"><span class="unit">만원</span></div></div>
+      </div>
+      <label>회의 시간</label>
+      <div class="unit-wrap"><input class="inp" id="m-min" inputmode="numeric" value="60"><span class="unit">분</span></div>
+      <button class="btn btn-blue" id="m-go">회의 비용 계산</button>
+      <div id="m-result" style="display:none; margin-top:16px"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">점심 뭐 먹지 룰렛</div>
+      <div class="roulette-result" id="r-result">?</div>
+      <button class="btn btn-blue" id="r-go">돌려돌려 돌림판</button>
+      <details style="margin-top:12px">
+        <summary class="hint" style="cursor:pointer; list-style:none">메뉴 편집 (탭해서 열기)</summary>
+        <div id="menu-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 4px"></div>
+        <div class="row2" style="align-items:end">
+          <input class="inp no-format" id="menu-new" maxlength="12" placeholder="회사 앞 맛집" style="text-align:left">
+          <button class="btn btn-blue" id="menu-add" style="margin-top:0; padding:12px">메뉴 추가</button>
+        </div>
+        <button class="btn btn-ghost" id="menu-reset">기본 메뉴로 되돌리기</button>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="section-title">오늘의 직장인 어록</div>
+      <div class="quote" id="q-text"></div>
+      <div class="quote-src" id="q-src"></div>
+      <button class="btn btn-ghost" id="q-go">다른 어록 보기</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ 탭 4: 정보 ═══════════ -->
+  <section id="tab-info" class="tab">
+    <div class="page-head">
+      <h1>알쓸직잡</h1>
+      <p>알아두면 쓸모있는 직장인 잡학</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">연휴 제조기</div>
+      <p class="hint" style="margin:0 0 10px">연차 며칠로 최장 연휴를 만들 수 있는지 찾아드려요. (2026~2027년 공휴일 기준, 임시공휴일 제외)</p>
+      <label>쓸 수 있는 연차</label>
+      <div class="unit-wrap"><input class="inp" id="g-leave" inputmode="numeric" value="3"><span class="unit">일</span></div>
+      <button class="btn btn-blue" id="g-go">연휴 조합 찾기</button>
+      <div id="g-result" style="display:none; margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">디데이</div>
+      <div id="dday-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">설정</div>
+      <p class="hint" style="margin:0 0 10px">알림은 월급날 아침과 연차 소멸 임박 시 보내드려요. (앱을 열 때 체크)</p>
+      <div class="row2">
+        <button class="btn btn-blue" id="noti-btn" style="margin-top:0">알림 켜기</button>
+        <button class="btn" id="theme-btn" style="margin-top:0; background:var(--text); color:var(--card)">다크모드</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">데이터 관리</div>
+      <p class="hint" style="margin:0 0 10px">모든 데이터는 이 기기에만 저장돼요. 브라우저 데이터를 지우면 사라지니, 파일로 백업해두세요. 기기를 바꿀 때도 이 파일로 옮기면 됩니다.</p>
+      <div class="row2">
+        <button class="btn btn-blue" id="exp-btn" style="margin-top:0">파일로 백업</button>
+        <button class="btn" id="imp-btn" style="margin-top:0; background:var(--bg); color:var(--text)">백업 불러오기</button>
+      </div>
+      <input type="file" id="imp-file" accept="application/json,.json" style="display:none">
+    </div>
+
+    <div class="section-title" style="padding:4px 4px 10px" id="rates-title">핵심 숫자</div>
+    <div class="info-grid" id="rates-grid"></div>
+
+    <div class="card">
+      <div class="section-title">몰라서 못 받는 돈들</div>
+      <div class="law"><div class="lt">퇴직금은 퇴사 후 14일 안에</div><div class="lb">회사가 14일 내 안 주면 연 20% 지연이자가 붙어요. 5인 미만 사업장도 퇴직금은 의무입니다.</div></div>
+      <div class="law"><div class="lt">해고예고수당 = 30일치 통상임금</div><div class="lb">30일 전 예고 없이 해고당하면 30일분 통상임금을 받을 수 있어요. (3개월 이상 근무 시)</div></div>
+      <div class="law"><div class="lt">안 쓴 연차는 돈으로</div><div class="lb">회사가 연차 사용 촉진을 하지 않았다면, 미사용 연차는 수당으로 청구할 수 있어요.</div></div>
+      <div class="law"><div class="lt">주휴수당은 알바도</div><div class="lb">주 15시간 이상 일하고 개근하면 하루치 유급휴일 수당이 발생해요.</div></div>
+      <div class="law"><div class="lt">실업급여는 '비자발적' 퇴사만</div><div class="lb">단, 자발적 퇴사여도 임금체불 2개월 이상·통근 왕복 3시간 이상·괴롭힘 등은 수급 인정될 수 있어요.</div></div>
+      <div class="law"><div class="lt">연장·야간·휴일근로는 1.5배</div><div class="lb">5인 이상 사업장 기준. 야간(22시~06시)이 겹치면 2배까지 올라가요.</div></div>
+    </div>
+
+    <p class="hint">본 앱의 모든 계산·정보는 참고용이며 법적 효력이 없습니다. 분쟁 시 고용노동부 상담 1350</p>
+  </section>
+
+</div>
+
+<!-- ═══════════ 로그인 ═══════════ -->
+<div id="login">
+  <div class="login-box">
+    <h1>회사에서 살아남기</h1>
+    <p class="tag">오늘도 퇴사각 재는 중</p>
+
+    <div id="login-users"></div>
+
+    <div class="login-sec" id="pin-sec" style="display:none">
+      <div style="font-weight:700; font-size:.92rem; margin-bottom:8px"><span id="pin-name"></span>님의 PIN</div>
+      <input class="inp no-format" id="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="4자리" style="text-align:center; letter-spacing:8px">
+      <button class="btn btn-blue" id="pin-ok">잠금 해제</button>
+      <button class="btn btn-ghost" id="pin-cancel">다른 프로필 선택</button>
+    </div>
+
+    <div class="login-sec" id="create-sec">
+      <div style="font-weight:700; font-size:.92rem; margin-bottom:4px">새 프로필 만들기</div>
+      <label>이름 (닉네임)</label>
+      <input class="inp no-format" id="new-name" maxlength="12" placeholder="김존버" style="text-align:left">
+      <label>PIN 4자리 (선택 — 연봉을 남에게 숨기고 싶다면)</label>
+      <input class="inp no-format" id="new-pin" type="password" inputmode="numeric" maxlength="4" placeholder="비워두면 잠금 없음" style="text-align:left">
+      <button class="btn btn-blue" id="create-btn">만들고 시작하기</button>
+      <p class="hint">모든 정보는 이 기기 안에만 저장됩니다. 서버로 전송되지 않아요.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 사표 모달 ═══════════ -->
+<div id="modal">
+  <div class="sheet">
+    <span class="chip">퇴사 시뮬레이션 리포트</span>
+    <h2 id="md-title">사표를 던졌습니다.</h2>
+    <div style="margin-top:14px" id="md-body"></div>
+    <button class="btn btn-blue" id="md-stay">…다시 열심히 다니기</button>
+    <button class="btn" id="md-share" style="background:var(--bg); color:var(--text)">리포트 이미지 저장</button>
+    <button class="btn btn-ghost" id="md-close">그래도 꿈은 꾼다</button>
+  </div>
+</div>
+
+<nav>
+  <button data-t="home" class="on">퇴사각</button>
+  <button data-t="calc">계산기</button>
+  <button data-t="fun">월루</button>
+  <button data-t="info">알쓸직잡</button>
+</nav>
+
+<script src="calc.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const won = (n) => Math.round(n).toLocaleString('ko-KR') + '원';
+const MAN = 10000;
+
+/* ── 콤마 자동 포맷 (숫자 입력창) ── */
+document.querySelectorAll('input[inputmode="numeric"]:not(.no-format)').forEach(el => {
+  el.addEventListener('input', () => {
+    const raw = el.value.replace(/[^\d]/g, '');
+    el.value = raw ? Number(raw).toLocaleString('ko-KR') : '';
+  });
+});
+const num = (id) => Number(($(id).value || '0').replace(/[^\d]/g, ''));
+
+/* ── 탭 전환 ── */
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.t));
+  window.scrollTo(0, 0);
+}));
+
+/* ── 계산기 세그먼트 ── */
+$('calc-seg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  $('calc-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.calc-panel').forEach(p => p.classList.toggle('on', p.id === 'c-' + b.dataset.c));
+}));
+
+/* ═══════════ 계정 (기기 내 다중 프로필) ═══════════ */
+const USERS_KEY = 'toesagak-users', CUR_KEY = 'toesagak-current-user';
+let currentUser = null;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function loadUsers() { try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; } catch { return []; } }
+function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('toesagak:' + pin));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ═══════════ 프로필 & 퇴사각 대시보드 ═══════════ */
+function profileKey() { return currentUser ? 'toesagak-profile-' + currentUser.id : 'toesagak-profile-v1'; }
+function loadProfile() { try { return JSON.parse(localStorage.getItem(profileKey())) || null; } catch { return null; } }
+function saveProfile(p) { localStorage.setItem(profileKey(), JSON.stringify(p)); }
+
+function fillProfileForm(p) {
+  if (!p) return;
+  $('p-salary').value = (p.salaryMan || '').toLocaleString('ko-KR');
+  $('p-join').value = p.join || '';
+  $('p-payday').value = p.payday || 25;
+  $('p-expense').value = (p.expenseMan || '').toLocaleString('ko-KR');
+  $('p-leave').value = p.leaveDays ?? '';
+  $('p-start').value = p.workStart || '09:00';
+  $('p-end').value = p.workEnd || '18:00';
+  $('p-lunch').value = p.lunchStart || '12:00';
+  $('p-lunchmin').value = p.lunchMin ?? 60;
+  $('p-birth').value = p.birthYear || '';
+}
+
+function quitMath(p) {
+  const annual = p.salaryMan * MAN;
+  const monthly = annual / 12;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const sev = p.join ? Calc.severance({
+    startDate: new Date(p.join), endDate: today, monthly3Total: monthly * 3,
+  }) : { amount: 0, eligible: false, serviceDays: 0 };
+  const leavePay = Calc.leavePayout(monthly, p.leaveDays || 0);
+  const total = sev.amount + leavePay;
+  const months = p.expenseMan > 0 ? total / (p.expenseMan * MAN) : 0;
+  return { sev, leavePay, total, months, monthly };
+}
+
+function verdictText(m, sevEligible) {
+  if (!sevEligible) return '아직 <b>1년을 못 채워서 퇴직금이 0원</b>입니다. 지금 나가면 진짜 맨몸입니다. 조용히 모니터 보세요.';
+  if (m < 1) return '이 돈으로는 <b>한 달도 못 버팁니다.</b> 사표는 마음속에만 품고, 오늘도 웃으며 출근합시다.';
+  if (m < 3) return '버틸 수 있는 시간 <b>3개월 미만.</b> 치킨집은커녕 치킨 시켜 먹기도 아까운 금액이에요. 일단 다니세요.';
+  if (m < 6) return '<b>반년이 안 됩니다.</b> 이직 확정 전 퇴사는 도박이에요. 존버가 이깁니다.';
+  if (m < 12) return '이직 준비하면서 버틸 체력은 있네요. 하지만 <b>1년도 못 버티는 돈</b>입니다. 다음 회사 합격 통보 받고 던지세요.';
+  return '오… <b>1년 이상 생존 가능.</b> 이건 좀 진지해지는데요? 그래도 오늘 회의는 들어가세요.';
+}
+
+let liveBase = null; // { total, perSec, t0 }
+function renderHome() {
+  const p = loadProfile();
+  if (!p || !p.salaryMan) return;
+  const { sev, leavePay, total, months, monthly } = quitMath(p);
+  $('h-total').textContent = won(total);
+  $('h-breakdown').textContent = `퇴직금 ${won(sev.amount)} + 미사용 연차수당 ${won(leavePay)}`;
+  $('h-months').textContent = months >= 1 ? `약 ${months.toFixed(1)}개월` : '1개월 미만';
+  $('h-gauge').style.width = Math.min(months / 12 * 100, 100) + '%';
+  $('h-verdict').innerHTML = verdictText(months, sev.eligible);
+
+  // 실시간 퇴직금 카운터: 하루에 평균임금×30/365 만큼 자란다
+  if (sev.eligible) {
+    const perDay = (monthly * 3 / 91) * 30 / 365;
+    liveBase = { total, perSec: perDay / 86400, t0: Date.now() };
+    $('h-live').textContent = `지금 이 순간에도 퇴직금 적립 중: +${Math.round(perDay).toLocaleString('ko-KR')}원/일`;
+  } else {
+    liveBase = null;
+    const left = 365 - sev.serviceDays;
+    $('h-live').textContent = left > 0 && sev.serviceDays > 0 ? `퇴직금 발생까지 ${left}일 남았습니다. 버티세요.` : '';
+  }
+
+  // 연차 소멸 배너 (10월 이후 + 남은 연차 존재 시)
+  const now = new Date();
+  if (now.getMonth() >= 9 && (p.leaveDays || 0) > 0) {
+    $('leave-banner').style.display = 'block';
+    $('leave-banner-text').textContent = `남은 연차 ${p.leaveDays}일 = ${won(Calc.leavePayout(monthly, p.leaveDays))}어치. 올해 안에 쓰거나, 회사가 촉진 안 했으면 수당으로 받으세요.`;
+  } else {
+    $('leave-banner').style.display = 'none';
+  }
+}
+setInterval(() => {
+  if (!liveBase) return;
+  const grown = liveBase.total + liveBase.perSec * (Date.now() - liveBase.t0) / 1000;
+  const intPart = Math.floor(grown).toLocaleString('ko-KR');
+  const frac = (grown % 1).toFixed(2).slice(2);
+  $('h-total').innerHTML = `${intPart}.<span style="font-size:1.2rem">${frac}</span>원`;
+}, 100);
+
+$('p-save').addEventListener('click', () => {
+  const birthRaw = $('p-birth').value.trim();
+  const p = {
+    salaryMan: num('p-salary'), join: $('p-join').value, payday: num('p-payday') || 25,
+    expenseMan: num('p-expense'), leaveDays: num('p-leave'),
+    workStart: $('p-start').value || '09:00', workEnd: $('p-end').value || '18:00',
+    lunchStart: $('p-lunch').value || '12:00', lunchMin: num('p-lunchmin') || 60,
+    birthYear: birthRaw ? Number(birthRaw) : null,
+  };
+  if (!p.salaryMan) { alert('연봉을 입력해주세요!'); return; }
+  if (p.join && new Date(p.join) > new Date()) { alert('입사일이 미래예요. 아직 출근 전이라면 이 앱은 조금 이르지 않을까요?'); return; }
+  if (p.birthYear && (p.birthYear < 1940 || p.birthYear > 2012)) { alert('출생연도를 다시 확인해주세요. (예: 1993)'); return; }
+  saveProfile(p);
+  $('profile-box').open = false;
+  renderHome(); renderDday(); renderGraph();
+});
+
+/* ── 사표 모달 ── */
+let lastReport = null; // 공유 카드용
+$('btn-quit').addEventListener('click', () => {
+  const p = loadProfile();
+  if (!p || !p.salaryMan) { alert('먼저 내 정보를 저장해주세요. 사표에도 준비가 필요합니다.'); return; }
+  const { sev, leavePay, total, months } = quitMath(p);
+  const age = p.birthYear ? new Date().getFullYear() - p.birthYear : 35;
+  const ue = Calc.unemployment({ age, insuredMonths: Math.floor(sev.serviceDays / 30.4), avgMonthlyWage: p.salaryMan * MAN / 12 });
+  lastReport = { sev, leavePay, total, months, ue, leaveDays: p.leaveDays || 0 };
+  $('md-body').innerHTML = `
+    <div class="result-row"><span class="k">퇴직금 (예상)</span><span class="v">${won(sev.amount)}</span></div>
+    <div class="result-row"><span class="k">미사용 연차수당 ${p.leaveDays || 0}일</span><span class="v">${won(leavePay)}</span></div>
+    <div class="result-row"><span class="k">실업급여</span><span class="v"><span class="strike">${won(ue.total)}</span> → 0원</span></div>
+    <p class="hint" style="margin:8px 0 0">자발적 퇴사는 실업급여가 <b>없습니다.</b> 회사가 잘라줘야 받는 돈이에요. 얄궂죠.${p.birthYear ? '' : ' (내 정보에 출생연도를 넣으면 나이 기준 지급일수까지 정확해져요.)'}</p>
+    <div class="result-row total"><span class="k">최종 실탄</span><span class="v">${won(total)}</span></div>
+    <div class="result-row"><span class="k">생존 가능 기간</span><span class="v">${months >= 1 ? '약 ' + months.toFixed(1) + '개월' : '1개월 미만'}</span></div>
+    <p style="margin-top:14px; font-size:.95rem; line-height:1.65">${verdictText(months, sev.eligible)}</p>`;
+  $('modal').classList.add('on');
+});
+$('md-stay').addEventListener('click', () => { $('modal').classList.remove('on'); alert('현명한 선택입니다. 퇴직금은 매일 조금씩 자라고 있어요.'); });
+$('md-close').addEventListener('click', () => $('modal').classList.remove('on'));
+
+/* ── 리포트 공유 카드 (canvas → PNG 저장) ── */
+$('md-share').addEventListener('click', () => {
+  if (!lastReport) return;
+  const r = lastReport;
+  const W = 720, H = 1000;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const F = '-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+  // 배경
+  ctx.fillStyle = '#1B1F27'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#242A36'; ctx.fillRect(0, 0, W, 220);
+  // 헤더
+  ctx.fillStyle = '#F04452'; ctx.font = `800 28px ${F}`;
+  ctx.fillText('퇴사 시뮬레이션 리포트', 56, 96);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `900 52px ${F}`;
+  ctx.fillText('사표를 던졌습니다.', 56, 168);
+  // 금액 rows
+  const row = (y, k, v, sub) => {
+    ctx.fillStyle = '#8B95A5'; ctx.font = `600 26px ${F}`; ctx.fillText(k, 56, y);
+    ctx.fillStyle = sub ? '#6B7684' : '#FFFFFF'; ctx.font = `800 30px ${F}`;
+    ctx.textAlign = 'right'; ctx.fillText(v, W - 56, y); ctx.textAlign = 'left';
+  };
+  row(300, '퇴직금 (예상)', won(r.sev.amount));
+  row(360, `미사용 연차수당 ${r.leaveDays}일`, won(r.leavePay));
+  row(420, '실업급여 (자발적 퇴사)', '0원', true);
+  ctx.strokeStyle = '#3A4150'; ctx.beginPath(); ctx.moveTo(56, 470); ctx.lineTo(W - 56, 470); ctx.stroke();
+  // 최종 실탄
+  ctx.fillStyle = '#8B95A5'; ctx.font = `600 28px ${F}`; ctx.fillText('최종 실탄', 56, 560);
+  ctx.fillStyle = '#FFB199'; ctx.font = `900 72px ${F}`;
+  ctx.fillText(won(r.total), 56, 650);
+  // 생존
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `800 40px ${F}`;
+  ctx.fillText(`생존 가능: ${r.months >= 1 ? '약 ' + r.months.toFixed(1) + '개월' : '1개월 미만'}`, 56, 740);
+  // 한줄평
+  ctx.fillStyle = '#9CA6B5'; ctx.font = `600 26px ${F}`;
+  const verdict = verdictText(r.months, r.sev.eligible).replace(/<[^>]+>/g, '');
+  // 줄바꿈 처리
+  let line = '', y = 810;
+  for (const ch of verdict) {
+    if (ctx.measureText(line + ch).width > W - 112) { ctx.fillText(line, 56, y); line = ch; y += 40; }
+    else line += ch;
+  }
+  ctx.fillText(line, 56, y);
+  // 워터마크
+  ctx.fillStyle = '#5A6270'; ctx.font = `700 24px ${F}`;
+  ctx.fillText('회사에서 살아남기 — 오늘도 퇴사각 재는 중', 56, H - 56);
+  // 다운로드
+  const a = document.createElement('a');
+  a.download = 'toesagak-report.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+});
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) $('modal').classList.remove('on'); });
+
+/* ═══════════ 계산기들 ═══════════ */
+$('n-go').addEventListener('click', () => {
+  const annual = num('n-salary') * MAN;
+  if (!annual) return;
+  const r = Calc.netSalary({ annual, taxFreeMonthly: num('n-taxfree') * MAN, dependents: num('n-dep') || 1, children: num('n-child') });
+  $('n-result').style.display = 'block';
+  $('n-result').innerHTML = `
+    <div class="section-title">월 예상 실수령액</div>
+    <div class="bignum" style="color:var(--blue)">${won(r.monthlyNet)}</div>
+    <div style="margin-top:14px">
+      <div class="result-row"><span class="k">월 세전 급여</span><span class="v">${won(r.monthlyGross)}</span></div>
+      <div class="result-row"><span class="k">국민연금</span><span class="v">−${won(r.pension)}</span></div>
+      <div class="result-row"><span class="k">건강보험</span><span class="v">−${won(r.health)}</span></div>
+      <div class="result-row"><span class="k">장기요양</span><span class="v">−${won(r.care)}</span></div>
+      <div class="result-row"><span class="k">고용보험</span><span class="v">−${won(r.employment)}</span></div>
+      <div class="result-row"><span class="k">소득세</span><span class="v">−${won(r.incomeTax)}</span></div>
+      <div class="result-row"><span class="k">지방소득세</span><span class="v">−${won(r.localTax)}</span></div>
+      <div class="result-row total"><span class="k">공제 합계</span><span class="v" style="color:var(--red)">−${won(r.totalDeduction)}</span></div>
+    </div>`;
+});
+
+/* 퇴직금 DB/DC 토글 */
+let sevType = 'db';
+function setSevType(t) {
+  sevType = t;
+  const on = { background: 'var(--blue)', color: '#fff' }, off = { background: 'var(--bg)', color: 'var(--sub)' };
+  Object.assign($('s-type-db').style, t === 'db' ? on : off);
+  Object.assign($('s-type-dc').style, t === 'dc' ? on : off);
+}
+$('s-type-db').addEventListener('click', () => setSevType('db'));
+$('s-type-dc').addEventListener('click', () => setSevType('dc'));
+
+$('s-go').addEventListener('click', () => {
+  const start = $('s-start').value, end = $('s-end').value;
+  const pay3 = num('s-pay3') * MAN;
+  if (!start || !end || !pay3) return;
+  if (sevType === 'dc') {
+    const years = Math.max((new Date(end) - new Date(start)) / 86400000 / 365, 0);
+    const annualTotal = pay3 * 4 + num('s-bonus') * MAN;
+    const amount = years >= 1 ? Calc.dcSeverance(annualTotal, years) : 0;
+    $('s-result').style.display = 'block';
+    $('s-result').innerHTML = years >= 1 ? `
+      <div class="section-title">DC형 예상 적립금</div>
+      <div class="bignum" style="color:var(--blue)">${won(amount)}</div>
+      <div style="margin-top:14px">
+        <div class="result-row"><span class="k">연간 임금총액 (추정)</span><span class="v">${won(annualTotal)}</span></div>
+        <div class="result-row"><span class="k">근속연수</span><span class="v">약 ${years.toFixed(1)}년</span></div>
+      </div>
+      <p class="hint">매년 임금총액의 1/12이 적립되는 구조. 운용수익/손실은 제외한 원금 기준이라 실제 수령액은 달라져요.</p>` : `
+      <div class="section-title">DC형 예상 적립금</div>
+      <div class="bignum" style="color:var(--red)">0원</div>
+      <p class="hint">퇴직급여는 1년 이상 근속해야 발생해요.</p>`;
+    return;
+  }
+  const r = Calc.severance({ startDate: new Date(start), endDate: new Date(end), monthly3Total: pay3, annualBonus: num('s-bonus') * MAN, leaveAllowance: num('s-lp') * MAN });
+  $('s-result').style.display = 'block';
+  $('s-result').innerHTML = r.eligible ? `
+    <div class="section-title">예상 퇴직금</div>
+    <div class="bignum" style="color:var(--blue)">${won(r.amount)}</div>
+    <div style="margin-top:14px">
+      <div class="result-row"><span class="k">재직일수</span><span class="v">${r.serviceDays.toLocaleString()}일 (약 ${(r.serviceDays / 365).toFixed(1)}년)</span></div>
+      <div class="result-row"><span class="k">1일 평균임금</span><span class="v">${won(r.avgDailyWage)}</span></div>
+    </div>
+    <p class="hint">평균임금 × 30일 × (재직일수 ÷ 365) 기준. DC형 퇴직연금은 계산이 달라요.</p>` : `
+    <div class="section-title">예상 퇴직금</div>
+    <div class="bignum" style="color:var(--red)">0원</div>
+    <p class="hint">재직 ${r.serviceDays}일 — 퇴직금은 <b>1년 이상</b> 근속해야 발생해요. ${365 - r.serviceDays}일만 더 버티면 생깁니다.</p>`;
+});
+
+/* 연차 산정 기준 토글 */
+let leaveMode = 'join';
+function setLeaveMode(m) {
+  leaveMode = m;
+  const on = { background: 'var(--blue)', color: '#fff' }, off = { background: 'var(--bg)', color: 'var(--sub)' };
+  Object.assign($('l-mode-join').style, m === 'join' ? on : off);
+  Object.assign($('l-mode-fiscal').style, m === 'fiscal' ? on : off);
+}
+$('l-mode-join').addEventListener('click', () => setLeaveMode('join'));
+$('l-mode-fiscal').addEventListener('click', () => setLeaveMode('fiscal'));
+
+$('l-go').addEventListener('click', () => {
+  const j = $('l-join').value;
+  if (!j) return;
+  const r = leaveMode === 'fiscal' ? Calc.fiscalLeave(j, new Date()) : Calc.annualLeave(j, new Date());
+  $('l-result').style.display = 'block';
+  $('l-result').innerHTML = `
+    <div class="section-title">올해 발생 연차 (${leaveMode === 'fiscal' ? '회계연도' : '입사일'} 기준)</div>
+    <div class="bignum" style="color:var(--blue)">${r.days}일</div>
+    <p class="hint">${r.note}<br>회사마다 산정 기준이 달라요. 취업규칙이나 인사팀에 기준을 확인하세요.</p>`;
+});
+
+$('u-go').addEventListener('click', () => {
+  const wage = num('u-wage') * MAN;
+  if (!wage || !num('u-age')) return;
+  const r = Calc.unemployment({ age: num('u-age'), insuredMonths: num('u-months'), avgMonthlyWage: wage });
+  $('u-result').style.display = 'block';
+  $('u-result').innerHTML = `
+    <div class="section-title">예상 구직급여 총액</div>
+    <div class="bignum" style="color:var(--blue)">${won(r.total)}</div>
+    <div style="margin-top:14px">
+      <div class="result-row"><span class="k">1일 지급액</span><span class="v">${won(r.daily)}</span></div>
+      <div class="result-row"><span class="k">지급 일수</span><span class="v">${r.days}일</span></div>
+      <div class="result-row"><span class="k">월 환산 (30일)</span><span class="v">약 ${won(r.daily * 30)}</span></div>
+    </div>
+    <p class="hint">비자발적 이직(권고사직·계약만료 등)이어야 받을 수 있어요. 2026년 이직자 기준 상한 68,100원 / 하한 66,048원.</p>`;
+});
+
+$('o-go').addEventListener('click', () => {
+  const sal = num('o-salary') * MAN, h = num('o-hours');
+  if (!sal || !h) return;
+  const r = Calc.overtime({ monthlySalary: sal, hours: h });
+  $('o-result').style.display = 'block';
+  $('o-result').innerHTML = `
+    <div class="section-title">이번 달 야근수당</div>
+    <div class="bignum" style="color:var(--blue)">${won(r.pay)}</div>
+    <div style="margin-top:14px">
+      <div class="result-row"><span class="k">내 통상시급</span><span class="v">${won(r.hourly)}</span></div>
+      <div class="result-row"><span class="k">가산율</span><span class="v">150% (연장근로)</span></div>
+    </div>
+    ${$('o-inclusive').checked
+      ? `<p class="hint">포괄임금제라도 <b>약정된 연장근로시간을 초과한 야근</b>은 별도 청구할 수 있어요. 계약서의 "월 연장근로 O시간 포함" 문구를 확인하고, 초과분은 기록(출퇴근 캡처)을 남기세요.</p>`
+      : `<p class="hint">5인 이상 사업장 기준. 야간(22시~06시)과 겹치면 200%까지 올라가요.</p>`}`;
+});
+
+/* ── 이직 손익 ── */
+$('v-go').addEventListener('click', () => {
+  const cur = num('v-cur') * MAN, offer = num('v-offer') * MAN;
+  if (!cur || !offer) return;
+  const a = Calc.netSalary({ annual: cur }), b = Calc.netSalary({ annual: offer });
+  const dm = b.monthlyNet - a.monthlyNet;
+  const raisePct = ((offer - cur) / cur * 100).toFixed(1);
+  const sign = dm >= 0 ? '+' : '−';
+  const verdict = dm < 200_000
+    ? '실수령 기준 점심값 수준입니다. 연봉만 보고 움직일 각은 아니에요. 커리어·조직·워라밸을 같이 저울에 올리세요.'
+    : dm < 500_000
+      ? '체감되는 차이입니다. 다만 위의 리셋 비용과 새 회사 적응 리스크까지 계산에 넣으세요.'
+      : '유의미한 상승입니다. 이 정도면 진지하게 고려할 만해요. 처우 협상에서 사이닝 보너스도 요구해보세요.';
+  $('v-result').style.display = 'block';
+  $('v-result').innerHTML = `
+    <div class="section-title">이직하면 실수령 차이</div>
+    <div class="bignum" style="color:${dm >= 0 ? 'var(--blue)' : 'var(--red)'}">${sign}${won(Math.abs(dm))}<span style="font-size:1rem">/월</span></div>
+    <div style="margin-top:14px">
+      <div class="result-row"><span class="k">현재 월 실수령</span><span class="v">${won(a.monthlyNet)}</span></div>
+      <div class="result-row"><span class="k">오퍼 월 실수령</span><span class="v">${won(b.monthlyNet)}</span></div>
+      <div class="result-row"><span class="k">연봉 인상률</span><span class="v">${raisePct}%</span></div>
+      <div class="result-row"><span class="k">연간 실수령 차이</span><span class="v">${sign}${won(Math.abs(dm) * 12)}</span></div>
+    </div>
+    <div style="margin-top:14px; background:var(--bg); border-radius:12px; padding:14px">
+      <div style="font-weight:800; font-size:.88rem; margin-bottom:6px">이직하면 리셋되는 것들</div>
+      <p class="hint" style="margin:0">연차 15일 → 첫해 11일(월차) · 퇴직금 평균임금 누적 리셋 · 수습 3개월 가능성 · 대출 심사용 재직기간 리셋</p>
+    </div>
+    <p style="margin-top:12px; font-size:.92rem; line-height:1.6">${verdict}</p>`;
+});
+
+/* ── 명세서 검증 ── */
+$('k-go').addEventListener('click', () => {
+  const salary = num('k-salary') * MAN;
+  if (!salary) return;
+  const taxBase = Math.max(0, salary - num('k-taxfree') * MAN);
+  const R = Calc.RATES;
+  const f10 = (v) => Math.floor(v / 10) * 10;
+  const expect = {
+    pension: f10(Math.min(Math.max(taxBase, R.pensionBaseMin), R.pensionBaseMax) * R.pensionRate),
+    health: f10(taxBase * R.healthRate),
+    emp: f10(taxBase * R.employmentRate),
+  };
+  const rows = [
+    ['국민연금', expect.pension, num('k-pension')],
+    ['건강보험', expect.health, num('k-health')],
+    ['고용보험', expect.emp, num('k-emp')],
+  ];
+  let anyIssue = false;
+  const html = rows.map(([name, exp, got]) => {
+    if (!got) return `<div class="result-row"><span class="k">${name} (예상)</span><span class="v">${won(exp)}</span></div>`;
+    const diff = got - exp;
+    const okRow = Math.abs(diff) <= Math.max(exp * 0.02, 1000);
+    if (!okRow) anyIssue = true;
+    return `<div class="result-row"><span class="k">${name}</span><span class="v" style="color:${okRow ? 'var(--green)' : 'var(--red)'}">${okRow ? '정상' : (diff > 0 ? '+' : '−') + won(Math.abs(diff)) + ' 차이'}</span></div>`;
+  }).join('');
+  $('k-result').style.display = 'block';
+  $('k-result').innerHTML = `
+    <div class="section-title">검증 결과</div>
+    ${html}
+    <p class="hint">${anyIssue
+      ? '차이가 있어요. 전월 정산분·보수월액 변경·연말정산 반영일 수 있으니 급여담당자에게 근거를 물어보세요. 물어보는 건 권리입니다.'
+      : '요율 기준으로 정상 범위입니다. 국민연금은 작년 소득 기준(기준소득월액)이라 최근 연봉 인상이 반영 안 됐을 수 있어요.'}</p>`;
+});
+
+/* ═══════════ 월루: 실시간 수입 카운터 ═══════════ */
+/* 환산용 물가 — 여기 한 곳만 고치면 전 화면(환산·회의비용·공유카드)에 반영 */
+const PRICES = { chicken: 23000, americano: 4500, gimbap: 3500, samgak: 1500, gukbap: 12000, netflix: 17000 };
+const EQUIVS = [
+  [PRICES.americano, '아메리카노', '잔'], [PRICES.gimbap, '김밥', '줄'], [PRICES.samgak, '삼각김밥', '개'],
+  [PRICES.chicken, '치킨', '마리'], [PRICES.gukbap, '국밥', '그릇'], [PRICES.netflix, '넷플릭스', '달치'],
+];
+function minsOf(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+/* 이번 달 실제 근무일수 (주말·공휴일 제외 — 공휴일 데이터 커버 범위 밖은 주말만 제외) */
+function workdaysInMonth(year, month) {
+  let n = 0;
+  const d = new Date(year, month, 1);
+  while (d.getMonth() === month) { if (!isOff(d)) n++; d.setDate(d.getDate() + 1); }
+  return n;
+}
+function todayEarned(p) {
+  const net = Calc.netSalary({ annual: p.salaryMan * MAN }).monthlyNet;
+  const s = minsOf(p.workStart || '09:00'), e = minsOf(p.workEnd || '18:00');
+  const lunchMin = p.lunchMin ?? 60;
+  const lunchS = minsOf(p.lunchStart || '12:00'), lunchE = lunchS + lunchMin;
+  const workMins = Math.max(e - s - lunchMin, 60);
+  const workdays = workdaysInMonth(new Date().getFullYear(), new Date().getMonth());
+  const dailyPay = net / workdays;
+  const now = new Date();
+  let worked = (now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60) - s;
+  worked -= Math.max(0, Math.min(now.getHours() * 60 + now.getMinutes(), lunchE) - lunchS);
+  worked = Math.max(0, Math.min(worked, workMins));
+  const dayOff = isOff(now);
+  return { earned: dayOff ? 0 : dailyPay * (worked / workMins), dailyPay, dayOff, workdays };
+}
+let equivIdx = 0;
+setInterval(() => {
+  const p = loadProfile();
+  if (!p || !p.salaryMan) return;
+  const { earned, dailyPay, dayOff, workdays } = todayEarned(p);
+  $('f-earned').textContent = won(earned);
+  if (dayOff) { $('f-equiv').textContent = '오늘은 쉬는 날입니다. 회사 생각은 넣어두세요.'; }
+  else {
+    const [price, name, unit] = EQUIVS[equivIdx % EQUIVS.length];
+    $('f-equiv').textContent = `≈ ${name} ${(earned / price).toFixed(1)}${unit} · 오늘 목표 ${won(dailyPay)}`;
+  }
+  $('f-note').textContent = `이번 달 근무일 ${workdays}일 기준 · 실수령액을 근무시간에 비례 배분`;
+}, 1000);
+setInterval(() => equivIdx++, 5000);
+
+/* ── 회의 비용 ── */
+$('m-go').addEventListener('click', () => {
+  const people = num('m-people'), salary = num('m-salary') * MAN, min = num('m-min');
+  if (!people || !salary || !min) return;
+  const cost = people * (salary / 12 / Calc.RATES.stdMonthlyHours / 60) * min;
+  const chicken = (cost / PRICES.chicken).toFixed(1);
+  $('m-result').style.display = 'block';
+  $('m-result').innerHTML = `
+    <div class="bignum" style="color:var(--red)">${won(cost)}</div>
+    <p class="hint" style="margin-top:6px">이 회의는 <b>치킨 ${chicken}마리</b>짜리입니다. 결론 없이 끝나면 치킨 ${chicken}마리가 증발한 겁니다.</p>`;
+});
+
+/* ── 점심 룰렛 (유저별 커스텀 메뉴) ── */
+const DEFAULT_MENUS = ['김치찌개','제육볶음','돈까스','국밥','냉면','마라탕','파스타','초밥','부대찌개','쌀국수','샐러드','햄버거','비빔밥','편의점 도시락','구내식당','굶고 칼퇴 준비'];
+function menusKey() { return 'toesagak-menus-' + (currentUser ? currentUser.id : 'anon'); }
+function loadMenus() {
+  try {
+    const m = JSON.parse(localStorage.getItem(menusKey()));
+    return Array.isArray(m) && m.length >= 2 ? m : [...DEFAULT_MENUS];
+  } catch { return [...DEFAULT_MENUS]; }
+}
+function saveMenus(m) { localStorage.setItem(menusKey(), JSON.stringify(m)); }
+function renderMenuChips() {
+  const menus = loadMenus();
+  $('menu-chips').innerHTML = menus.map((m, i) =>
+    `<button data-i="${i}" style="border:1px solid var(--line); background:var(--bg); color:var(--text); border-radius:99px; padding:6px 12px; font-family:inherit; font-size:.8rem; font-weight:600; cursor:pointer">${esc(m)} ×</button>`
+  ).join('');
+  $('menu-chips').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    const menus2 = loadMenus();
+    if (menus2.length <= 2) { alert('메뉴는 최소 2개는 있어야 룰렛이 돌아가요.'); return; }
+    menus2.splice(Number(b.dataset.i), 1);
+    saveMenus(menus2); renderMenuChips();
+  }));
+}
+$('menu-add').addEventListener('click', () => {
+  const v = $('menu-new').value.trim();
+  if (!v) return;
+  const menus = loadMenus();
+  if (menus.includes(v)) { alert('이미 있는 메뉴예요.'); return; }
+  menus.push(v); saveMenus(menus);
+  $('menu-new').value = '';
+  renderMenuChips();
+});
+$('menu-reset').addEventListener('click', () => { localStorage.removeItem(menusKey()); renderMenuChips(); });
+
+let spinning = false;
+$('r-go').addEventListener('click', () => {
+  if (spinning) return;
+  spinning = true;
+  const menus = loadMenus();
+  let i = 0, ticks = 18 + Math.floor(Math.random() * 8);
+  const spin = setInterval(() => {
+    $('r-result').textContent = menus[Math.floor(Math.random() * menus.length)];
+    if (++i >= ticks) { clearInterval(spin); spinning = false; }
+  }, 90);
+});
+
+/* ── 직장인 어록 ── */
+const QUOTES = [
+  ['월요일은 지구가 인류에게 내리는 주간 벌칙이다.', '— 익명의 직장인'],
+  ['퇴근 후의 삶을 위해 출근한다.', '— 현자'],
+  ['월급은 통장을 스칠 뿐, 카드값은 영원하다.', '— 통장 요정'],
+  ['회의는 길고, 결론은 없다. 하지만 시간은 간다.', '— 회의실 벽시계'],
+  ['참을 인(忍) 세 번이면 호구 된다. 하지만 네 번이면 월급날이다.', '— 존버의 달인'],
+  ['사직서는 품고 있을 때 가장 강력한 무기다.', '— 서랍 속 사직서'],
+  ['오늘 할 일을 내일로 미루면, 내일의 내가 야근한다.', '— 어제의 나'],
+  ['점심시간은 밥을 먹는 시간이 아니라 영혼을 충전하는 시간이다.', '— 12시의 철학자'],
+  ['상사의 농담에 웃는 것도 업무의 연장이다. 야근수당을 요구하라.', '— 노동법 낭만파'],
+  ['연차는 쓰라고 있는 것이다. 눈치는 넣어두자.', '— 연차 소진 운동본부'],
+  ['버티는 게 이기는 거라면, 나는 매일 우승 중이다.', '— 존버 챔피언'],
+  ['출근길 지하철에서 이미 하루치 에너지를 다 썼다.', '— 2호선 생존자'],
+  ['금요일 오후 4시, 시간은 거꾸로 흐른다.', '— 아인슈타인(아님)'],
+  ['퇴사는 배신이 아니라 이직이다.', '— 커리어 명언집'],
+  ['내 자리의 화분이 나보다 회사를 오래 다녔다.', '— 화분 후배'],
+];
+let qIdx = Math.floor(Math.random() * QUOTES.length);
+function showQuote() { const [t, s] = QUOTES[qIdx % QUOTES.length]; $('q-text').textContent = '"' + t + '"'; $('q-src').textContent = s; }
+$('q-go').addEventListener('click', () => { qIdx++; showQuote(); });
+showQuote();
+
+/* ═══════════ 정보: 디데이 ═══════════ */
+/* 공휴일 데이터 — 매년 여기만 갱신하면 됨 (임시공휴일 미포함) */
+const HOLIDAYS = [
+  ['2026-08-15', '광복절'], ['2026-08-17', '대체공휴일'],
+  ['2026-09-24', '추석 연휴'], ['2026-09-25', '추석'], ['2026-09-26', '추석 연휴'],
+  ['2026-10-03', '개천절'], ['2026-10-05', '대체공휴일'], ['2026-10-09', '한글날'],
+  ['2026-12-25', '성탄절'],
+  ['2027-01-01', '신정'],
+  ['2027-02-06', '설 연휴'], ['2027-02-07', '설날'], ['2027-02-08', '설 연휴'], ['2027-02-09', '대체공휴일'],
+  ['2027-03-01', '삼일절'], ['2027-05-05', '어린이날'], ['2027-05-13', '부처님오신날'],
+  ['2027-06-06', '현충일'], ['2027-08-15', '광복절'], ['2027-08-16', '대체공휴일'],
+  ['2027-09-14', '추석 연휴'], ['2027-09-15', '추석'], ['2027-09-16', '추석 연휴'],
+  ['2027-10-03', '개천절'], ['2027-10-04', '대체공휴일'], ['2027-10-09', '한글날'], ['2027-10-11', '대체공휴일'],
+  ['2027-12-25', '성탄절'], ['2027-12-27', '대체공휴일'],
+];
+function renderDday() {
+  const p = loadProfile();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const rows = [];
+  // 월급날
+  const payday = (p && p.payday) || 25;
+  let pd = new Date(today.getFullYear(), today.getMonth(), payday);
+  if (pd < today) pd = new Date(today.getFullYear(), today.getMonth() + 1, payday);
+  const pdDiff = Math.round((pd - today) / 86400000);
+  rows.push(['월급날', pdDiff === 0 ? '오늘!' : `D-${pdDiff}`]);
+  // 다음 공휴일
+  const next = HOLIDAYS.map(([d, n]) => [new Date(d), n]).find(([d]) => d >= today);
+  if (next) {
+    const diff = Math.round((next[0] - today) / 86400000);
+    rows.push([next[1], diff === 0 ? '오늘!' : `D-${diff}`]);
+  }
+  // 이번 주 금요일
+  const fri = (5 - today.getDay() + 7) % 7;
+  rows.push(['불금', fri === 0 ? '오늘!' : `D-${fri}`]);
+  // 연말
+  const yearEnd = Math.round((new Date(today.getFullYear(), 11, 31) - today) / 86400000);
+  rows.push(['올해 끝', `D-${yearEnd}`]);
+  $('dday-list').innerHTML = rows.map(([l, v]) => `<div class="dday"><span class="dl">${l}</span><span class="dv">${v}</span></div>`).join('');
+}
+
+/* ═══════════ 연휴 제조기 ═══════════ */
+const HOLIDAY_SET = new Set(HOLIDAYS.map(([d]) => d));
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const isOff = (d) => d.getDay() === 0 || d.getDay() === 6 || HOLIDAY_SET.has(iso(d));
+const KDAY = ['일', '월', '화', '수', '목', '금', '토'];
+const kdate = (d) => `${d.getMonth() + 1}/${d.getDate()}(${KDAY[d.getDay()]})`;
+
+$('g-go').addEventListener('click', () => {
+  const maxLeave = num('g-leave');
+  if (!maxLeave) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  // 커버 범위: 오늘부터 1년, 단 공휴일 데이터가 있는 곳까지만
+  const lastHoliday = new Date(HOLIDAYS[HOLIDAYS.length - 1][0]);
+  const yearAhead = new Date(today); yearAhead.setDate(yearAhead.getDate() + 366);
+  const horizon = new Date(Math.min(lastHoliday.getTime() + 7 * 86400000, yearAhead.getTime()));
+  const cands = [];
+  for (let s = new Date(today); s < horizon; s.setDate(s.getDate() + 1)) {
+    const prev = new Date(s); prev.setDate(prev.getDate() - 1);
+    if (!isOff(s) || isOff(prev)) continue; // 연휴 시작일: 쉬는 날 && 전날은 근무일
+    for (let span = 3; span <= 16; span++) {
+      const e = new Date(s); e.setDate(e.getDate() + span - 1);
+      if (e >= horizon) break;
+      const next = new Date(e); next.setDate(next.getDate() + 1);
+      if (!isOff(e) || isOff(next)) continue; // 연휴 종료일: 쉬는 날 && 다음날은 근무일
+      let leave = 0;
+      const leaveDates = [];
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        if (!isOff(d)) { leave++; leaveDates.push(kdate(new Date(d))); }
+      }
+      if (leave >= 1 && leave <= maxLeave) {
+        cands.push({ s: new Date(s), e: new Date(e), len: span, leave, leaveDates, eff: span / leave });
+      }
+    }
+  }
+  cands.sort((a, b) => b.eff - a.eff || b.len - a.len || a.s - b.s);
+  const picks = [];
+  for (const c of cands) {
+    if (picks.some(p => c.s <= p.e && c.e >= p.s)) continue; // 겹치면 스킵
+    picks.push(c);
+    if (picks.length >= 4) break;
+  }
+  picks.sort((a, b) => a.s - b.s);
+  $('g-result').style.display = 'block';
+  $('g-result').innerHTML = picks.length ? picks.map(c => `
+    <div style="background:var(--bg); border-radius:12px; padding:14px; margin-bottom:8px">
+      <div style="font-weight:800">${kdate(c.s)} ~ ${kdate(c.e)} <span style="color:var(--blue)">${c.len}일 연속 휴가</span></div>
+      <p class="hint" style="margin-top:4px">연차 ${c.leave}일 사용: ${c.leaveDates.join(', ')} — 연차 1일당 ${c.eff.toFixed(1)}일 효율</p>
+    </div>`).join('') :
+    '<p class="hint">해당 연차로 만들 수 있는 연휴 조합이 남아있지 않아요. 내년 공휴일이 확정되면 업데이트됩니다.</p>';
+});
+
+/* ═══════════ 알림 ═══════════ */
+function checkNotifications() {
+  if (localStorage.getItem('toesagak-noti') !== 'on' || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const p = loadProfile();
+  if (!p) return;
+  const today = new Date();
+  const todayKey = 'toesagak-noti-' + iso(today);
+  if (localStorage.getItem(todayKey)) return; // 하루 1회
+  if (today.getDate() === (p.payday || 25)) {
+    new Notification('회사에서 살아남기', { body: '오늘 월급날입니다. 통장을 스치기 전에 인사하세요.' });
+    localStorage.setItem(todayKey, '1');
+  } else if (today.getMonth() >= 10 && (p.leaveDays || 0) > 0) {
+    new Notification('회사에서 살아남기', { body: `남은 연차 ${p.leaveDays}일, 올해 안에 소멸될 수 있어요.` });
+    localStorage.setItem(todayKey, '1');
+  }
+  // 지난 날짜의 일일 체크 키 청소
+  const todayIso = iso(today);
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('toesagak-noti-') && k !== 'toesagak-noti-' + todayIso && k !== 'toesagak-noti')
+    .forEach((k) => localStorage.removeItem(k));
+}
+function syncNotiBtn() {
+  const on = localStorage.getItem('toesagak-noti') === 'on' && ('Notification' in window) && Notification.permission === 'granted';
+  $('noti-btn').textContent = on ? '알림 켜짐 (끄기)' : '알림 켜기';
+}
+$('noti-btn').addEventListener('click', async () => {
+  if (!('Notification' in window)) { alert('이 브라우저는 알림을 지원하지 않아요.'); return; }
+  if (localStorage.getItem('toesagak-noti') === 'on') {
+    localStorage.setItem('toesagak-noti', 'off');
+  } else {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') { localStorage.setItem('toesagak-noti', 'on'); checkNotifications(); }
+  }
+  syncNotiBtn();
+});
+
+/* ═══════════ 존버 그래프 ═══════════ */
+function graphMath(p) {
+  const monthly = p.salaryMan * MAN / 12;
+  const avgDaily = monthly * 3 / 91;
+  return { sevAt: (days) => days >= 365 ? avgDaily * 30 * days / 365 : 0 };
+}
+let graphCtx = null; // 툴팁용 { start, tEnd, sevAt, X역변환 }
+function renderGraph() {
+  const p = loadProfile();
+  const card = $('graph-card');
+  if (!p || !p.salaryMan || !p.join) { card.style.display = 'none'; graphCtx = null; return; }
+  card.style.display = 'block';
+  const { sevAt } = graphMath(p);
+  const start = new Date(p.join); start.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const tToday = Math.max(Math.round((today - start) / 86400000), 1);
+  const tEnd = tToday + 365;
+  const W = 340, H = 150, PL = 8, PR = 8, PT = 26, PB = 20;
+  const maxV = sevAt(tEnd) || 1;
+  const X = (t) => PL + (t / tEnd) * (W - PL - PR);
+  const Y = (v) => H - PB - (v / maxV) * (H - PT - PB);
+  const pts = (a, b) => {
+    const arr = [[a, sevAt(a)]];
+    if (a < 364 && b >= 364) arr.push([364, 0]);
+    if (a < 365 && b >= 365) arr.push([365, sevAt(365)]);
+    arr.push([b, sevAt(b)]);
+    return arr.map(([t, v]) => `${X(t).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  };
+  const vNow = sevAt(tToday), vEnd = sevAt(tEnd);
+  const nowRight = X(tToday) > W * 0.55; // 라벨 좌우 배치
+  $('graph-svg').innerHTML = `
+    <line x1="${PL}" y1="${Y(0)}" x2="${W - PR}" y2="${Y(0)}" stroke="var(--line)" stroke-width="1"/>
+    ${tToday < 365 ? `
+      <line x1="${X(365)}" y1="${PT - 4}" x2="${X(365)}" y2="${H - PB}" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="${X(365) + 4}" y="${PT + 4}" font-size="9" font-weight="700" fill="var(--sub)">1년 = 퇴직금 발생</text>` : ''}
+    <polyline points="${pts(0, tToday)}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
+    <polyline points="${pts(tToday, tEnd)}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-dasharray="4 4" opacity=".45"/>
+    <circle cx="${X(tToday).toFixed(1)}" cy="${Y(vNow).toFixed(1)}" r="4.5" fill="var(--blue)" stroke="var(--card)" stroke-width="2"/>
+    <text x="${(X(tToday) + (nowRight ? -9 : 9)).toFixed(1)}" y="${(Y(vNow) - 9).toFixed(1)}" text-anchor="${nowRight ? 'end' : 'start'}" font-size="10.5" font-weight="800" fill="var(--text)">오늘 ${won(vNow)}</text>
+    <text x="${W - PR}" y="${H - PB + 13}" text-anchor="end" font-size="9.5" font-weight="700" fill="var(--sub)">점선 = 앞으로 1년 예상</text>`;
+  $('graph-sub').textContent = vNow > 0
+    ? `1년 더 존버하면 퇴직금이 ${won(vEnd - vNow)} 더 쌓여요.`
+    : `1년을 채우는 순간 ${won(sevAt(365))}이 생깁니다. 그 전에 나가면 0원이에요.`;
+  graphCtx = { start, tEnd, sevAt, X, PL, PR, W };
+}
+$('graph-svg').addEventListener('pointermove', (e) => {
+  if (!graphCtx) return;
+  const box = e.currentTarget.getBoundingClientRect();
+  const { tEnd, sevAt, start, PL, PR, W } = graphCtx;
+  const frac = ((e.clientX - box.left) / box.width * W - PL) / (W - PL - PR);
+  const t = Math.round(Math.min(Math.max(frac, 0), 1) * tEnd);
+  const d = new Date(start); d.setDate(d.getDate() + t);
+  const tip = $('graph-tip');
+  tip.style.display = 'block';
+  tip.textContent = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} · ${won(sevAt(t))}`;
+  const tx = Math.min(Math.max(e.clientX - box.left - 50, 0), box.width - 110);
+  tip.style.left = tx + 'px';
+  tip.style.top = '2px';
+});
+$('graph-svg').addEventListener('pointerleave', () => { $('graph-tip').style.display = 'none'; });
+
+/* ═══════════ 오늘 수입 공유 카드 ═══════════ */
+$('f-share').addEventListener('click', () => {
+  const p = loadProfile();
+  if (!p || !p.salaryMan) { alert('퇴사각 탭에서 내 정보를 먼저 저장해주세요.'); return; }
+  const { earned, dailyPay } = todayEarned(p);
+  const W = 720, H = 900;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const F = '-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+  ctx.fillStyle = '#1B1F27'; ctx.fillRect(0, 0, W, H);
+  const now = new Date();
+  ctx.fillStyle = '#8B95A5'; ctx.font = `700 26px ${F}`;
+  ctx.fillText(`${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} 기준`, 56, 110);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `900 44px ${F}`;
+  ctx.fillText('오늘 출근해서 번 돈', 56, 190);
+  ctx.fillStyle = '#4ADE80'; ctx.font = `900 88px ${F}`;
+  ctx.fillText(won(earned), 56, 330);
+  ctx.fillStyle = '#9CA6B5'; ctx.font = `600 30px ${F}`;
+  ctx.fillText(`치킨 ${(earned / PRICES.chicken).toFixed(1)}마리`, 56, 430);
+  ctx.fillText(`아메리카노 ${(earned / PRICES.americano).toFixed(1)}잔`, 56, 480);
+  ctx.fillText(`김밥 ${(earned / PRICES.gimbap).toFixed(1)}줄`, 56, 530);
+  ctx.strokeStyle = '#3A4150'; ctx.beginPath(); ctx.moveTo(56, 590); ctx.lineTo(W - 56, 590); ctx.stroke();
+  ctx.fillStyle = '#8B95A5'; ctx.font = `600 28px ${F}`;
+  ctx.fillText(`오늘 만근 시 ${won(dailyPay)}`, 56, 650);
+  ctx.fillStyle = '#5A6270'; ctx.font = `700 24px ${F}`;
+  ctx.fillText('회사에서 살아남기 — 오늘도 퇴사각 재는 중', 56, H - 56);
+  const a = document.createElement('a');
+  a.download = 'toesagak-today.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+});
+
+/* ═══════════ 다크모드 ═══════════ */
+function isDarkNow() {
+  const c = document.documentElement.classList;
+  if (c.contains('dark')) return true;
+  if (c.contains('light')) return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function syncThemeBtn() { $('theme-btn').textContent = isDarkNow() ? '라이트모드로' : '다크모드로'; }
+$('theme-btn').addEventListener('click', () => {
+  const next = isDarkNow() ? 'light' : 'dark';
+  document.documentElement.classList.remove('dark', 'light');
+  document.documentElement.classList.add(next);
+  localStorage.setItem('toesagak-theme', next);
+  syncThemeBtn();
+});
+const savedTheme = localStorage.getItem('toesagak-theme');
+if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.classList.add(savedTheme);
+
+/* ═══════════ 데이터 백업/복구 ═══════════ */
+$('exp-btn').addEventListener('click', () => {
+  if (!currentUser) return;
+  const data = { app: 'toesagak', version: 1, name: currentUser.name, exportedAt: new Date().toISOString(), profile: loadProfile() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `toesagak-backup-${currentUser.name.replace(/[^\w가-힣]/g, '_')}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+function importProfileData(data) {
+  if (!data || data.app !== 'toesagak' || !data.profile || typeof data.profile.salaryMan !== 'number') {
+    alert('퇴사각 백업 파일이 아니에요.');
+    return false;
+  }
+  saveProfile(data.profile);
+  initApp();
+  alert(`'${data.name || '백업'}' 데이터를 불러왔어요. 현재 계정(${currentUser.name})에 적용됩니다.`);
+  return true;
+}
+$('imp-btn').addEventListener('click', () => $('imp-file').click());
+$('imp-file').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try { importProfileData(JSON.parse(rd.result)); } catch { alert('파일을 읽을 수 없어요.'); } };
+  rd.readAsText(f);
+  e.target.value = '';
+});
+
+/* ═══════════ 요율 표시 (연도 자동) ═══════════ */
+function renderRates() {
+  const R = Calc.RATES;
+  const staleNote = R.isStale ? ' — 최신 요율 업데이트 전이라 참고용이에요' : '';
+  $('calc-sub').textContent = `${R.year}년 요율 기준${staleNote}`;
+  $('rates-title').textContent = `${R.year}년 핵심 숫자`;
+  const pct = (v, d) => (v * 100).toFixed(d).replace(/\.?0+$/, '') + '%';
+  $('rates-grid').innerHTML = [
+    ['최저시급', R.minWage.toLocaleString('ko-KR') + '원'],
+    ['최저 월급 (주40h)', R.minWageMonthly.toLocaleString('ko-KR') + '원'],
+    ['실업급여 1일 상한', R.ueDailyMax.toLocaleString('ko-KR') + '원'],
+    ['실업급여 1일 하한', R.ueDailyMin.toLocaleString('ko-KR') + '원'],
+    ['국민연금 (근로자)', pct(R.pensionRate, 2)],
+    ['건강보험 (근로자)', pct(R.healthRate, 3)],
+  ].map(([t, n]) => `<div class="info-cell"><div class="t">${t}</div><div class="n">${n}</div></div>`).join('');
+}
+renderRates();
+
+/* ── PWA 서비스워커 ── */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* ═══════════ 로그인 흐름 ═══════════ */
+let pendingUser = null;
+
+function renderLogin() {
+  const users = loadUsers();
+  $('login-users').innerHTML = users.map((u) =>
+    `<button class="user-btn" data-id="${u.id}">${esc(u.name)}<span class="pin-mark">${u.pin ? 'PIN 잠금' : ''}</span></button>`
+  ).join('');
+  $('login-users').querySelectorAll('.user-btn').forEach((b) =>
+    b.addEventListener('click', () => selectUser(b.dataset.id)));
+  $('pin-sec').style.display = 'none';
+  $('create-sec').style.display = 'block';
+}
+
+function selectUser(id) {
+  const u = loadUsers().find((x) => x.id === id);
+  if (!u) return;
+  if (u.pin) {
+    pendingUser = u;
+    $('pin-name').textContent = u.name;
+    $('pin-input').value = '';
+    $('pin-sec').style.display = 'block';
+    $('create-sec').style.display = 'none';
+    $('pin-input').focus();
+  } else enterApp(u);
+}
+
+function pinLockKey(id) { return 'toesagak-pinfail-' + id; }
+function getPinLock(id) { try { return JSON.parse(localStorage.getItem(pinLockKey(id))) || { n: 0, until: 0 }; } catch { return { n: 0, until: 0 }; } }
+
+$('pin-ok').addEventListener('click', async () => {
+  if (!pendingUser) return;
+  const lock = getPinLock(pendingUser.id);
+  if (lock.until > Date.now()) {
+    alert(`시도 5회 초과로 잠겼어요. ${Math.ceil((lock.until - Date.now()) / 60000)}분 뒤에 다시 해주세요.`);
+    return;
+  }
+  const h = await hashPin($('pin-input').value.trim());
+  if (h === pendingUser.pin) {
+    localStorage.removeItem(pinLockKey(pendingUser.id));
+    enterApp(pendingUser);
+  } else {
+    lock.n += 1;
+    if (lock.n >= 5) { lock.until = Date.now() + 5 * 60000; lock.n = 0; }
+    localStorage.setItem(pinLockKey(pendingUser.id), JSON.stringify(lock));
+    alert(lock.until > Date.now()
+      ? '5회 틀려서 5분간 잠급니다. 심호흡 한번 하고 오세요.'
+      : `PIN이 틀렸어요. (${lock.n}/5회)`);
+    $('pin-input').value = ''; $('pin-input').focus();
+  }
+});
+$('pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pin-ok').click(); });
+$('pin-cancel').addEventListener('click', renderLogin);
+
+$('create-btn').addEventListener('click', async () => {
+  const name = $('new-name').value.trim();
+  const pin = $('new-pin').value.trim();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+  if (pin && !/^\d{4}$/.test(pin)) { alert('PIN은 숫자 4자리로 해주세요.'); return; }
+  const users = loadUsers();
+  if (users.some((u) => u.name === name)) { alert('같은 이름의 프로필이 이미 있어요.'); return; }
+  const u = { id: 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, pin: pin ? await hashPin(pin) : null };
+  users.push(u); saveUsers(users);
+  enterApp(u);
+});
+
+function enterApp(u) {
+  currentUser = u;
+  localStorage.setItem(CUR_KEY, u.id);
+  $('login').classList.add('off');
+  initApp();
+}
+
+$('btn-logout').addEventListener('click', () => {
+  localStorage.removeItem(CUR_KEY);
+  location.reload();
+});
+
+$('btn-delacct').addEventListener('click', () => {
+  if (!currentUser) return;
+  if (!confirm(`'${currentUser.name}' 계정과 저장된 모든 정보(연봉, 입사일 등)를 이 기기에서 삭제합니다. 되돌릴 수 없어요.`)) return;
+  saveUsers(loadUsers().filter((u) => u.id !== currentUser.id));
+  // 계정에 딸린 모든 데이터 정리 (프로필·룰렛 메뉴·PIN 잠금 기록)
+  localStorage.removeItem(profileKey());
+  localStorage.removeItem('toesagak-menus-' + currentUser.id);
+  localStorage.removeItem('toesagak-pinfail-' + currentUser.id);
+  localStorage.removeItem(CUR_KEY);
+  location.reload();
+});
+
+/* ── 초기화 ── */
+function initApp() {
+  document.querySelector('#tab-home .page-head p').textContent = `오늘도 퇴사각 재는 중 · ${currentUser.name}님`;
+  // 대시보드 초기화 (계정 전환 시 이전 사용자 잔상 제거)
+  liveBase = null;
+  $('h-total').textContent = '— 원';
+  $('h-breakdown').textContent = '프로필을 입력하면 계산해드려요';
+  $('h-live').textContent = '';
+  $('h-gauge').style.width = '0%';
+  $('h-months').textContent = '0개월';
+  $('h-verdict').innerHTML = '아래에 연봉과 입사일을 넣어보세요. 냉정하게 계산해드립니다.';
+  $('leave-banner').style.display = 'none';
+  ['p-salary', 'p-expense', 'p-leave'].forEach((id) => { $(id).value = ''; });
+  $('p-join').value = '';
+  fillProfileForm(loadProfile());
+  $('profile-box').open = !loadProfile();
+  // 회의 비용 기본값: 내 연봉
+  const prof = loadProfile();
+  if (prof && prof.salaryMan) $('m-salary').value = prof.salaryMan.toLocaleString('ko-KR');
+  renderHome();
+  renderGraph();
+  renderDday();
+  renderMenuChips();
+  syncNotiBtn();
+  syncThemeBtn();
+  checkNotifications();
+}
+
+(function boot() {
+  // 기존 단일 프로필 사용자 마이그레이션
+  const legacy = localStorage.getItem('toesagak-profile-v1');
+  if (!loadUsers().length && legacy) {
+    const u = { id: 'u-legacy', name: '내 프로필', pin: null };
+    saveUsers([u]);
+    localStorage.setItem('toesagak-profile-u-legacy', legacy);
+    localStorage.removeItem('toesagak-profile-v1');
+  }
+  const cur = loadUsers().find((x) => x.id === localStorage.getItem(CUR_KEY));
+  if (cur) { currentUser = cur; $('login').classList.add('off'); initApp(); }
+  else renderLogin();
+})();
+</script>
+</body>
+</html>
