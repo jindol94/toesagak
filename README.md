@@ -12,10 +12,18 @@
 
 ## 개발
 
-정적 웹앱입니다. 로컬 실행:
+웹앱은 `docs/`에 있습니다 (GitHub Pages가 이 폴더를 서빙). 로컬 실행:
 
 ```bash
-python3 -m http.server 5623
+cd docs && python3 -m http.server 5623
+```
+
+iOS 앱 (Capacitor):
+
+```bash
+npm install
+npx cap sync ios
+npx cap open ios   # Xcode에서 서명 후 실행/배포
 ```
 
 계산 로직 테스트:

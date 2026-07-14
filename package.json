@@ -1,0 +1,32 @@
+{
+  "name": "toesagak",
+  "version": "1.0.0",
+  "description": "오늘도 퇴사각 재는 직장인을 위한 필수 계산기 앱 (PWA)",
+  "main": "test.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jindol94/toesagak.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jindol94/toesagak/issues"
+  },
+  "homepage": "https://github.com/jindol94/toesagak#readme",
+  "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.4.1",
+    "@capacitor/local-notifications": "^8.2.0"
+  }
+}
