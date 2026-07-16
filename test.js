@@ -1,5 +1,5 @@
 /* 퇴사각 계산 로직 검증 테스트 */
-const C = require('./calc.js');
+const C = require('./docs/calc.js');
 let pass = 0, fail = 0;
 
 function ok(name, cond, detail = '') {

@@ -3,8 +3,8 @@
   "appName": "회사에서 살아남기",
   "webDir": "docs",
   "ios": {
-    "contentInset": "automatic",
-    "backgroundColor": "#1B1F27"
+    "contentInset": "never",
+    "backgroundColor": "#000000"
   },
   "plugins": {
     "LocalNotifications": {
