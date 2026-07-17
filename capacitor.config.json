@@ -1,6 +1,6 @@
 {
   "appId": "com.jindol94.salanamgi",
-  "appName": "회사에서 살아남기",
+  "appName": "퇴사각",
   "webDir": "docs",
   "ios": {
     "contentInset": "never",

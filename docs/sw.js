@@ -1,5 +1,5 @@
-/* 회사에서 살아남기 서비스워커 — 오프라인 지원 */
-const CACHE = 'toesagak-v17';
+/* 퇴사각 서비스워커 — 오프라인 지원 */
+const CACHE = 'toesagak-v18';
 const ASSETS = ['./', './index.html', './calc.js', './manifest.json', './icon-192.png', './icon-512.png', './fonts/PretendardVariable.woff2', './privacy.html'];
 
 self.addEventListener('install', (e) => {
