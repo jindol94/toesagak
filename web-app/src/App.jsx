@@ -323,8 +323,11 @@ export default function App() {
   return <div className="app-shell">
     <div className="app-wrap">
       <header className="topbar">
-        <div><div className="brand">퇴사각<span>·</span></div><p className="subbrand">일한 만큼, 실시간으로</p></div>
-        <div className="user-chip">{session?.user?.email || '게스트 모드'}</div>
+        <div><div className="brand">퇴사각</div><p className="subbrand">일한 만큼, 실시간으로</p></div>
+        <div className="header-actions">
+          <span className="user-chip">{session?.user?.email || '게스트 모드'}</span>
+          <button className="icon-button" aria-label="근무 설정" onClick={() => setTab('settings')}><Settings2 size={20}/></button>
+        </div>
       </header>
 
       {!isSupabaseConfigured && <div className="config-warning">Supabase 연결 정보가 없어. web-app/.env.local을 설정해줘.</div>}
