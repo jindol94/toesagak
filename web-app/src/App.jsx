@@ -5,22 +5,7 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 
-const STATES = {
-  출근: ['commute', '주인님 출근합니다…'],
-  근무: ['working', '시키신 일 다 했습니다…'],
-  점심: ['lunch', '밥 먹어도 됩니까…'],
-  야근: ['overtime', '아직 안 끝났습니까…'],
-  퇴근: ['off', '자유다!!!'],
-  휴일: ['holiday', '오늘은 아무것도 안 합니다…'],
-  휴식: ['off', '잠깐만 쉬겠습니다…']
-};
 const money = n => Math.floor(Math.max(0, Number(n) || 0)).toLocaleString('ko-KR') + '원';
-const statusKey = s => (STATES[s] || STATES.근무)[0];
-
-function Mascot({ state = '근무', className = '' }) {
-  return <div className={'mascot ' + className} data-state={statusKey(state)} role="img" aria-label={state + ' 캐릭터'} />;
-}
-
 export default function App() {
   const [session, setSession] = useState(null);
   const [tab, setTab] = useState('home');
@@ -316,7 +301,6 @@ export default function App() {
           <div className="earn-head"><span>지금까지 번 수당</span><span className={paused ? 'state paused' : 'state'}>{paused ? '일시 정지' : '● 적립 중'}</span></div>
           <div className="amount">{money(earned)}</div>
           <div className="rate">초당 <b>{money(hourly / 3600)}</b> · 누적 근무 {Math.floor(elapsedSeconds / 3600)}시간 {Math.floor((elapsedSeconds % 3600) / 60)}분</div>
-          <Mascot state={status} className="hero-mascot"/>
           <div className="earn-foot"><span>기본 시급 {money(hourly)}</span><span>오늘 예상 {money(dailyExpected)}</span></div>
         </section>
         <div className="action-row">
@@ -344,7 +328,7 @@ export default function App() {
           <section className="office-floor"><div className="floor-label"><span>OFFICE FLOOR</span><span>MAX 6</span></div><div className="desk-grid">{Array.from({length:6},(_,index)=>{
             const member=members[index];
             return <div className={'desk '+(member?'':'empty')} key={member?.id||index}>
-              {member ? <><div className="speech">{member.status_message||member.state}</div><Mascot state={member.state}/><b>{member.name}</b><small>{member.state}</small></> : <><Plus size={20}/><b>빈자리</b><small>입장 가능</small></>}
+              {member ? <><b>{member.name}</b><small>{member.state}</small><div className="speech">{member.status_message || '상태 메시지 없음'}</div></> : <><Plus size={20}/><b>빈자리</b><small>입장 가능</small></>}
             </div>;
           })}</div></section>
           <section className="panel status-panel"><div className="panel-title">내 근무 상태</div>
