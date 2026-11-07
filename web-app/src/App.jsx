@@ -38,10 +38,10 @@ export default function App() {
   const [nightRate, setNightRate] = useState(0.5);
   const [holidayRate, setHolidayRate] = useState(1.5);
   const [fixedAllowance, setFixedAllowance] = useState(0);
-  const [now, setNow] = useState(Date.now());
-  const [status, setStatus] = useState('근무');
-  const [pauseStarted, setPauseStarted] = useState(null);
-  const [pausedTotal, setPausedTotal] = useState(0);
+  const [status, setStatus] = useState('퇴근');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const todayKey = new Date().toLocaleDateString('en-CA');
+  const elapsedKey = 'toesagak-elapsed:' + (session?.user?.id || 'guest') + ':' + todayKey;
   const [officeId, setOfficeId] = useState(null);
   const [officeName, setOfficeName] = useState('나의 오피스');
   const [inviteCode, setInviteCode] = useState('');
@@ -71,9 +71,21 @@ export default function App() {
   }, [notify]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    try { setElapsedSeconds(Number(window.localStorage.getItem(elapsedKey) || 0)); }
+    catch { setElapsedSeconds(0); }
+  }, [elapsedKey]);
+
+  useEffect(() => {
+    if (['점심', '휴식', '퇴근', '휴일'].includes(status)) return undefined;
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(previous => {
+        const next = previous + 1;
+        try { window.localStorage.setItem(elapsedKey, String(next)); } catch { /* Storage can be disabled. */ }
+        return next;
+      });
+    }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [status, elapsedKey]);
 
   useEffect(() => {
     if (!session?.user || !supabase) return undefined;
@@ -165,22 +177,17 @@ export default function App() {
   }, [officeId, session?.user?.id, refreshOffice]);
 
   const paused = ['점심', '휴식', '퇴근', '휴일'].includes(status);
-  const earned = useMemo(() => {
+  const scheduledSeconds = useMemo(() => {
     const [sh, sm] = workStart.split(':').map(Number);
     const [eh, em] = workEnd.split(':').map(Number);
-    const start = new Date(now); start.setHours(sh, sm, 0, 0);
-    const end = new Date(now); end.setHours(eh, em, 0, 0);
-    const cutoff = pauseStarted || now;
-    const effectiveNow = Math.max(start.getTime(), cutoff - pausedTotal);
-    const regularMs = Math.max(0, Math.min(effectiveNow, end.getTime()) - start.getTime() - breakMinutes * 60000);
-    const overtimeMs = Math.max(0, effectiveNow - end.getTime());
-    return (regularMs / 3600000 * hourly) + (overtimeMs / 3600000 * hourly * overtimeRate);
-  }, [now, workStart, workEnd, breakMinutes, hourly, overtimeRate, pauseStarted, pausedTotal]);
-  const dailyExpected = useMemo(() => {
-    const [sh, sm] = workStart.split(':').map(Number);
-    const [eh, em] = workEnd.split(':').map(Number);
-    return Math.max(0, ((eh * 60 + em) - (sh * 60 + sm) - breakMinutes) / 60) * hourly;
-  }, [workStart, workEnd, breakMinutes, hourly]);
+    let duration = (eh * 60 + em) - (sh * 60 + sm);
+    if (duration < 0) duration += 1440;
+    return Math.max(0, duration * 60 - Number(breakMinutes) * 60);
+  }, [workStart, workEnd, breakMinutes]);
+  const regularSeconds = Math.min(elapsedSeconds, scheduledSeconds);
+  const overtimeSeconds = Math.max(0, elapsedSeconds - scheduledSeconds);
+  const earned = (regularSeconds * hourly / 3600) + (overtimeSeconds * hourly / 3600 * Number(overtimeRate));
+  const dailyExpected = scheduledSeconds * hourly / 3600;
 
   const sendMagicLink = async event => {
     event.preventDefault();
@@ -259,12 +266,6 @@ export default function App() {
   };
 
   const changeStatus = async next => {
-    const nextPaused = ['점심', '휴식', '퇴근', '휴일'].includes(next);
-    if (nextPaused && !paused && pauseStarted === null) setPauseStarted(Date.now());
-    if (!nextPaused && paused && pauseStarted !== null) {
-      setPausedTotal(value => value + (Date.now() - pauseStarted));
-      setPauseStarted(null);
-    }
     setStatus(next);
     const mine = members.find(row => row.mine);
     if (mine) {
@@ -314,7 +315,7 @@ export default function App() {
         <section className="earn-card">
           <div className="earn-head"><span>지금까지 번 수당</span><span className={paused ? 'state paused' : 'state'}>{paused ? '일시 정지' : '● 적립 중'}</span></div>
           <div className="amount">{money(earned)}</div>
-          <div className="rate">초당 <b>{money(hourly / 3600)}</b> 씩 쌓이는 중</div>
+          <div className="rate">초당 <b>{money(hourly / 3600)}</b> · 누적 근무 {Math.floor(elapsedSeconds / 3600)}시간 {Math.floor((elapsedSeconds % 3600) / 60)}분</div>
           <Mascot state={status} className="hero-mascot"/>
           <div className="earn-foot"><span>기본 시급 {money(hourly)}</span><span>오늘 예상 {money(dailyExpected)}</span></div>
         </section>
