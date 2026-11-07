@@ -195,7 +195,7 @@ export default function App() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.origin, data: { display_name: email.split('@')[0] } }
+      options: { emailRedirectTo: window.location.origin + import.meta.env.BASE_URL, data: { display_name: email.split('@')[0] } }
     });
     setBusy(false);
     if (error) notify('로그인 링크 발송 실패: ' + error.message);
