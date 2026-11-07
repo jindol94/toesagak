@@ -1,11 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  BriefcaseBusiness, CalendarDays, Coffee, Copy, DoorOpen, House, LogOut,
-  MessageCircle, Plus, Send, Settings2, ShieldCheck, Users, Wallet
+  ArrowRight, Bell, BriefcaseBusiness, CalendarDays, ChartNoAxesColumnIncreasing,
+  Coffee, Copy, DoorOpen, House, LogOut, MessageCircle, Plus, Send,
+  Settings2, SlidersHorizontal, Users, Wallet
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 
 const money = n => Math.floor(Math.max(0, Number(n) || 0)).toLocaleString('ko-KR') + '원';
+const dateKey = date => {
+  const d = new Date(date);
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+};
+const getWeekDates = date => {
+  const today = new Date(date);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + index);
+    return { key: dateKey(day), label: ['월', '화', '수', '목', '금', '토', '일'][index], date: day.getDate() };
+  });
+};
 export default function App() {
   const [session, setSession] = useState(null);
   const [tab, setTab] = useState('home');
@@ -25,7 +40,11 @@ export default function App() {
   const [fixedAllowance, setFixedAllowance] = useState(0);
   const [status, setStatus] = useState('퇴근');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const todayKey = new Date().toLocaleDateString('en-CA');
+  const todayKey = dateKey(new Date());
+  const [weeklyRecords, setWeeklyRecords] = useState(() => {
+    try { return JSON.parse(window.localStorage.getItem('toesagak-week-records') || '{}'); }
+    catch { return {}; }
+  });
   const elapsedKey = 'toesagak-elapsed:' + (session?.user?.id || 'guest') + ':' + todayKey;
   const [officeId, setOfficeId] = useState(null);
   const [officeName, setOfficeName] = useState('나의 오피스');
@@ -172,7 +191,22 @@ export default function App() {
   const regularSeconds = Math.min(elapsedSeconds, scheduledSeconds);
   const overtimeSeconds = Math.max(0, elapsedSeconds - scheduledSeconds);
   const earned = (regularSeconds * hourly / 3600) + (overtimeSeconds * hourly / 3600 * Number(overtimeRate));
+  const regularEarned = regularSeconds * hourly / 3600;
+  const overtimeEarned = overtimeSeconds * hourly / 3600 * Number(overtimeRate);
   const dailyExpected = scheduledSeconds * hourly / 3600;
+  const weekDays = useMemo(() => getWeekDates(new Date()), []);
+  const weeklyTotal = weekDays.reduce((sum, day) => sum + Number(weeklyRecords[day.key] || 0), 0);
+  const weeklyPeak = Math.max(1, ...weekDays.map(day => Number(weeklyRecords[day.key] || 0)));
+
+  useEffect(() => {
+    const amount = Math.floor(earned);
+    setWeeklyRecords(previous => {
+      if (Number(previous[todayKey] || 0) === amount) return previous;
+      const next = { ...previous, [todayKey]: amount };
+      try { window.localStorage.setItem('toesagak-week-records', JSON.stringify(next)); } catch { /* Storage may be disabled. */ }
+      return next;
+    });
+  }, [earned, todayKey]);
 
   const sendMagicLink = async event => {
     event.preventDefault();
@@ -296,23 +330,93 @@ export default function App() {
       {!isSupabaseConfigured && <div className="config-warning">Supabase 연결 정보가 없어. web-app/.env.local을 설정해줘.</div>}
 
       {tab === 'home' && <main className="home-page">
-        <div className="eyebrow">TODAY'S ACCRUED PAY</div>
-        <section className="earn-card">
-          <div className="earn-head"><span>지금까지 번 수당</span><span className={paused ? 'state paused' : 'state'}>{paused ? '일시 정지' : '● 적립 중'}</span></div>
-          <div className="amount">{money(earned)}</div>
-          <div className="rate">초당 <b>{money(hourly / 3600)}</b> · 누적 근무 {Math.floor(elapsedSeconds / 3600)}시간 {Math.floor((elapsedSeconds % 3600) / 60)}분</div>
-          <div className="earn-foot"><span>기본 시급 {money(hourly)}</span><span>오늘 예상 {money(dailyExpected)}</span></div>
-        </section>
-        <div className="action-row">
-          <button className="primary-action" onClick={() => changeStatus('근무')}><BriefcaseBusiness size={17}/>근무하기</button>
-          <button onClick={() => changeStatus('점심')}><Coffee size={17}/>점심시간</button>
-          <button onClick={() => changeStatus('퇴근')}><DoorOpen size={17}/>퇴근하기</button>
+        <div className="page-intro">
+          <div>
+            <div className="eyebrow">TODAY'S WORK PAY</div>
+            <h1>지금까지 번 일일 수당</h1>
+          </div>
+          <span className={'state ' + (paused ? 'paused' : '')}>{paused ? '적립 일시정지' : '실시간 적립 중'}</span>
         </div>
-        <section className="summary-grid">
-          <article className="panel"><div className="panel-title"><CalendarDays size={16}/>이번 주 예상 수당</div><strong>{money(dailyExpected * 5)}</strong><small>주 5일 근무 기준 예상치</small></article>
-          <article className="panel"><div className="panel-title"><Wallet size={16}/>월 고정 수당</div><strong>{money(fixedAllowance)}</strong><small>설정한 고정 수당</small></article>
+
+        <section className="earn-card">
+          <div className="earn-topline">
+            <span className="live-dot" />
+            <span>실시간 누적 수당</span>
+          </div>
+          <div className="amount">{money(earned)}</div>
+          <div className="rate"><b>+{money(hourly / 3600)} / 초</b><span>근무 상태에 따라 자동 계산</span></div>
+          <div className="earn-breakdown">
+            <div><span>기본 수당</span><strong>{money(regularEarned)}</strong></div>
+            <div><span>연장 수당</span><strong>{money(overtimeEarned)}</strong></div>
+            <div><span>기타 수당</span><strong>{money(0)}</strong></div>
+          </div>
         </section>
-        <div className="privacy-note"><ShieldCheck size={16}/>개인 시급과 수입은 다른 오피스 멤버에게 공개되지 않아.</div>
+
+        <section className="weekly-card">
+          <div className="section-heading">
+            <div className="section-title"><ChartNoAxesColumnIncreasing size={18}/>수당 리포트</div>
+            <button className="inline-link" onClick={() => setTab('report')}>자세히 보기 <ArrowRight size={15}/></button>
+          </div>
+          <div className="weekly-summary">
+            <div>
+              <span>이번 주 누적 수당</span>
+              <strong>{money(weeklyTotal)}</strong>
+              <small>이 기기에 기록된 실제 적립액</small>
+            </div>
+            <div className="week-bars" aria-label="요일별 누적 수당">
+              {weekDays.map(day => {
+                const value = Number(weeklyRecords[day.key] || 0);
+                const height = value > 0 ? Math.max(9, Math.round(value / weeklyPeak * 66)) : 4;
+                return <div className="week-bar-item" key={day.key}>
+                  <div className={'week-bar ' + (day.key === todayKey ? 'today' : '')} style={{ height: height + 'px' }} />
+                  <span>{day.label}</span>
+                </div>;
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="quick-actions">
+          <button onClick={() => setTab('settings')}><SlidersHorizontal size={21}/><span>시급·수당 설정</span></button>
+          <button onClick={() => setTab('report')}><ChartNoAxesColumnIncreasing size={21}/><span>수당 리포트</span></button>
+          <button onClick={() => setTab('office')}><Users size={21}/><span>함께 일하기</span></button>
+          <button onClick={() => notify('퇴사 준비 계산기는 다음 기능 업데이트에서 연결할게.')}><CalendarDays size={21}/><span>퇴사 준비</span></button>
+        </section>
+
+        <section className="work-controls">
+          <div className="section-heading">
+            <div className="section-title">근무 상태</div>
+            <span className="work-state-text">{status}</span>
+          </div>
+          <div className="status-actions">
+            <button className={status === '근무' ? 'selected' : ''} onClick={() => changeStatus('근무')}><BriefcaseBusiness size={16}/>근무 시작</button>
+            <button className={status === '점심' ? 'selected' : ''} onClick={() => changeStatus('점심')}><Coffee size={16}/>점심시간</button>
+            <button className={status === '휴식' ? 'selected' : ''} onClick={() => changeStatus('휴식')}>휴식</button>
+            <button className={status === '퇴근' ? 'selected' : ''} onClick={() => changeStatus('퇴근')}><DoorOpen size={16}/>퇴근</button>
+          </div>
+        </section>
+      </main>}
+
+      {tab === 'report' && <main className="stack-page report-page">
+        <div className="page-heading"><div><div className="eyebrow">PAY REPORT</div><h1>수당 리포트</h1></div><ChartNoAxesColumnIncreasing size={22}/></div>
+        <section className="panel report-total">
+          <span>이번 주 누적 수당</span>
+          <strong>{money(weeklyTotal)}</strong>
+          <small>이 기기에서 기록한 실제 적립액 · 개인 기록</small>
+        </section>
+        <section className="panel report-chart">
+          <div className="section-heading"><div className="section-title">요일별 수당</div><span className="muted-caption">월요일–일요일</span></div>
+          <div className="report-bars">{weekDays.map(day => {
+            const value = Number(weeklyRecords[day.key] || 0);
+            const height = value > 0 ? Math.max(12, Math.round(value / weeklyPeak * 150)) : 5;
+            return <div className="report-bar-item" key={day.key}>
+              <strong>{value ? money(value) : '—'}</strong>
+              <div className="report-bar-track"><div className={'report-bar-fill ' + (day.key === todayKey ? 'today' : '')} style={{height:height+'px'}}/></div>
+              <span>{day.label}</span>
+            </div>;
+          })}</div>
+        </section>
+        <section className="panel report-note"><ShieldCheck size={17}/><span>수당 기록은 현재 이 브라우저에 저장돼. 다른 기기와 동기화하는 기능은 별도로 연결할 예정이야.</span></section>
       </main>}
 
       {tab === 'office' && <main className="stack-page">
@@ -340,7 +444,7 @@ export default function App() {
             <form className="join-form" onSubmit={sendMessage}><input value={chatDraft} onChange={e=>setChatDraft(e.target.value)} placeholder="동료에게 한마디" maxLength={500}/><button aria-label="전송"><Send size={16}/></button></form>
           </section>
         </>}
-        <p className="helper-note">오피스에는 캐릭터·근무 상태·상태 메시지만 표시돼. 시급과 수입은 공유하지 않아.</p>
+        <p className="helper-note">오피스에는 이름·근무 상태·상태 메시지만 표시돼. 개인 시급과 수입은 공유하지 않아.</p>
       </main>}
 
       {tab === 'settings' && <main className="stack-page">
@@ -363,9 +467,10 @@ export default function App() {
       </main>}
 
       <nav className="bottom-nav">
-        <button className={tab==='home'?'active':''} onClick={()=>setTab('home')}><House size={20}/><span>홈</span></button>
-        <button className={tab==='office'?'active':''} onClick={()=>setTab('office')}><Users size={20}/><span>함께 일하기</span></button>
-        <button className={tab==='settings'?'active':''} onClick={()=>setTab('settings')}><Settings2 size={20}/><span>설정</span></button>
+        <button className={tab==='home'?'active':''} onClick={() => setTab('home')}><House size={20}/><span>홈</span></button>
+        <button className={tab==='report'?'active':''} onClick={() => setTab('report')}><ChartNoAxesColumnIncreasing size={20}/><span>리포트</span></button>
+        <button className={tab==='office'?'active':''} onClick={() => setTab('office')}><Users size={20}/><span>함께 일하기</span></button>
+        <button className={tab==='settings'?'active':''} onClick={() => setTab('settings')}><Settings2 size={20}/><span>내 정보</span></button>
       </nav>
     </div>
     {toast&&<div role="status" className="toast">{toast}</div>}
