@@ -37,7 +37,8 @@ begin
     select id into v_office_id from public.offices
       where is_matchable = true
       order by created_at asc
-      for update skip locked limit 1;
+      limit 1
+      for update skip locked;
     exit when v_office_id is null;
     select count(*) into v_member_count from public.office_members where office_id=v_office_id;
     if v_member_count < 6 then exit; end if;
